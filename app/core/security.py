@@ -20,9 +20,10 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import jwt
-from jwt import InvalidTokenError, PyJWTError
+from jwt import PyJWTError
 
 from app.core.config import Settings, settings as _settings
+from app.core.exceptions import InvalidTokenError
 
 
 @dataclass(frozen=True, slots=True)

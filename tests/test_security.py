@@ -28,7 +28,7 @@ def test_decode_rejects_tampered_token() -> None:
     """Токен с изменённой подписью должен быть отклонён."""
     token = encode_token(1)
     tampered = token[:-2] + ("AA" if token[-2:] != "AA" else "BB")
-    from jwt.exceptions import InvalidTokenError
+    from app.core.exceptions import InvalidTokenError
 
     try:
         decode_token(tampered)
@@ -44,8 +44,7 @@ def test_decode_rejects_expired_token() -> None:
 
     short_settings = Settings(JWT_KEY=settings.jwt_key, JWT_LIFETIME=-10)
     token = encode_token(1, settings=short_settings)
-    # PyJWT выбрасывает ExpiredSignatureError, который является подклассом InvalidTokenError.
-    from jwt.exceptions import InvalidTokenError
+    from app.core.exceptions import InvalidTokenError
 
     try:
         decode_token(token)
@@ -60,7 +59,7 @@ def test_decode_rejects_wrong_issuer() -> None:
 
     other_settings = Settings(JWT_KEY=settings.jwt_key, APP_NAME="someone-else")
     token = encode_token(1, settings=other_settings)
-    from jwt.exceptions import InvalidTokenError
+    from app.core.exceptions import InvalidTokenError
 
     try:
         decode_token(token)
