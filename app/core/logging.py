@@ -1,23 +1,24 @@
-"""Logging configuration.
+"""Конфигурация логирования.
 
-Two named loggers are configured:
+Настраиваются два именованных логгера:
 
-* ``logged`` — the main application logger used by controllers / services.
-* ``push_log`` — a separate logger for the push-notification worker endpoints.
+* ``logged`` — основной логгер приложения, используемый контроллерами / сервисами.
+* ``push_log`` — отдельный логгер для эндпоинтов воркера push-уведомлений.
 
-Both loggers write to **time-rotated** files kept for
-:data:`Settings.log_retention_days` days (30 by default).  A separate file is
-created per calendar day, so the on-disk layout looks like:
+Оба логгера пишут в **ротируемые по времени** файлы, которые хранятся
+:data:`Settings.log_retention_days` дней (по умолчанию 30). На каждый
+календарный день создаётся отдельный файл, поэтому расположение на диске
+выглядит так:
 
 ::
 
-    storage/logs/log.log          ← today
+    storage/logs/log.log          ← сегодня
     storage/logs/log.log.2025-10-01
     storage/logs/log.log.2025-09-30
     ...
 
-A ``logging.StreamHandler`` is also attached so logs are mirrored to stdout
-(this is the convention inside Docker containers).
+Также подключается ``logging.StreamHandler``, чтобы логи дублировались
+в stdout (это соглашение внутри Docker-контейнеров).
 """
 
 from __future__ import annotations
@@ -30,13 +31,13 @@ from typing import Final
 
 from app.core.config import Settings, settings as _settings
 
-#: Name of the main application logger.
+#: Имя основного логгера приложения.
 LOGGER_NAME: Final[str] = "logged"
 
-#: Name of the push-notification logger.
+#: Имя логгера push-уведомлений.
 PUSH_LOGGER_NAME: Final[str] = "push_log"
 
-#: Format used for both file and console output.
+#: Формат, используемый и для файлового, и для консольного вывода.
 _LOG_FORMAT: Final[str] = (
     "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
 )
@@ -44,13 +45,13 @@ _LOG_DATE_FORMAT: Final[str] = "%Y-%m-%d %H:%M:%S"
 
 
 def _ensure_log_dir(log_dir: str) -> Path:
-    """Create the log directory if it does not already exist.
+    """Создать директорию логов, если она ещё не существует.
 
     Args:
-        log_dir: Relative or absolute path to the log directory.
+        log_dir: Относительный или абсолютный путь к директории логов.
 
     Returns:
-        The :class:`pathlib.Path` for the (now-existing) directory.
+        :class:`pathlib.Path` для (теперь существующей) директории.
     """
     path = Path(log_dir)
     path.mkdir(parents=True, exist_ok=True)
@@ -62,19 +63,19 @@ def _build_logger(
     log_file_name: str,
     settings: Settings,
 ) -> logging.Logger:
-    """Build and configure a single named logger.
+    """Собрать и настроить один именованный логгер.
 
     Args:
-        name: Logger name (exposed to callers via :func:`logging.getLogger`).
-        log_file_name: Base file name (``log`` or ``push_log``).
-        settings: Application settings used for path / level / retention.
+        name: Имя логгера (доступно вызовающим через :func:`logging.getLogger`).
+        log_file_name: Базовое имя файла (``log`` или ``push_log``).
+        settings: Настройки приложения, используемые для пути / уровня / срока хранения.
 
     Returns:
-        A configured :class:`logging.Logger` instance.
+        Настроенный экземпляр :class:`logging.Logger`.
     """
     logger = logging.getLogger(name)
     logger.setLevel(settings.log_level_int)
-    # Avoid double-attaching handlers if called twice (e.g. during tests).
+    # Не подключать обработчики дважды при повторном вызове (например, в тестах).
     if logger.handlers:
         return logger
 
@@ -102,40 +103,40 @@ def _build_logger(
 
 
 def setup_logging(settings: Settings = _settings) -> logging.Logger:
-    """Initialise both named loggers and return the main one.
+    """Инициализировать оба именованных логгера и вернуть основной.
 
-    This function is idempotent — it is safe to call multiple times.
+    Эта функция идемпотентна — её безопасно вызывать многократно.
 
     Args:
-        settings: Application settings (defaults to the global singleton).
+        settings: Настройки приложения (по умолчанию глобальный синглтон).
 
     Returns:
-        The main application logger.
+        Основной логгер приложения.
     """
     main_logger = _build_logger(LOGGER_NAME, "log", settings)
     _build_logger(PUSH_LOGGER_NAME, "push_log", settings)
-    # Ensure the root logger does not swallow our messages.
+    # Убедиться, что корневой логгер не поглощает наши сообщения.
     logging.getLogger().setLevel(logging.WARNING)
     return main_logger
 
 
 def get_logger(name: str = LOGGER_NAME) -> logging.Logger:
-    """Return a logger configured by :func:`setup_logging`.
+    """Вернуть логгер, настроенный функцией :func:`setup_logging`.
 
     Args:
-        name: Optional logger name (defaults to the main application logger).
+        name: Необязательное имя логгера (по умолчанию основной логгер приложения).
 
     Returns:
-        A :class:`logging.Logger` instance.
+        Экземпляр :class:`logging.Logger`.
     """
     return logging.getLogger(name)
 
 
 def get_push_logger() -> logging.Logger:
-    """Return the push-notification logger.
+    """Вернуть логгер push-уведомлений.
 
     Returns:
-        A :class:`logging.Logger` instance for push-related events.
+        Экземпляр :class:`logging.Logger` для событий, связанных с push.
     """
     return logging.getLogger(PUSH_LOGGER_NAME)
 

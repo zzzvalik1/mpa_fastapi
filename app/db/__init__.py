@@ -1,5 +1,5 @@
-"""Database sub-package.
+"""Подпакет базы данных.
 
-Exposes three SQLAlchemy engines (one per logical database) and FastAPI
-dependency callables that yield short-lived sessions.
+Предоставляет три SQLAlchemy-движка (по одному на логическую базу данных) и
+вызываемые FastAPI-зависимости, которые отдают короткоживущие сессии.
 """

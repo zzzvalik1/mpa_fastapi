@@ -1,4 +1,4 @@
-"""Fee service (mirrors ``App/Controller/FeeController.php``)."""
+"""Сервис платежей (порт ``App/Controller/FeeController.php``)."""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from app.services.base_service import BaseService
 
 
 class FeeService(BaseService):
-    """Builds the transaction history for ``POST .../transactions``."""
+    """Формирует историю транзакций для ``POST .../transactions``."""
 
     # Map of ``ticket_id`` -> human-readable comment (verbatim from the PHP version).
     _TICKET_COMMENTS: dict[str, str] = {
@@ -54,16 +54,16 @@ class FeeService(BaseService):
         start_date: str | None = None,
         end_date: str | None = None,
     ) -> list[dict[str, Any]]:
-        """Return the full transaction history for the given account.
+        """Возвращает полную историю транзакций для заданного аккаунта.
 
         Args:
-            uid: Authenticated user id.
-            account_id: Path account id (must equal ``uid``).
-            start_date: Optional inclusive lower bound (ISO-8601).
-            end_date: Optional inclusive upper bound (ISO-8601).
+            uid: Идентификатор аутентифицированного пользователя.
+            account_id: Идентификатор аккаунта из пути (должен совпадать с ``uid``).
+            start_date: Опциональная включительная нижняя граница (ISO-8601).
+            end_date: Опциональная включительная верхняя граница (ISO-8601).
 
         Returns:
-            A list of transaction dicts sorted newest-first.
+            Список dict транзакций, отсортированный от новых к старым.
         """
         user = self.customer_repo.find_subscriber_by_uid(uid)
         if not user:
@@ -159,7 +159,7 @@ class FeeService(BaseService):
     def _resolve_comment(
         self, payment: dict[str, Any], ticket_id: str, method: int
     ) -> str:
-        """Return the localised comment for an income payment."""
+        """Возвращает локализованный комментарий для входящего платежа."""
         if ticket_id in self._TICKET_COMMENTS:
             return self._TICKET_COMMENTS[ticket_id]
         if ticket_id in ("aggregated", "mainoffice", "Шенкурский", "m-lines-office"):
@@ -180,7 +180,7 @@ class FeeService(BaseService):
 
     @staticmethod
     def _build_row(payment: dict[str, Any], sum_paid: float, comment: str) -> dict[str, Any]:
-        """Build an income / generic transaction row."""
+        """Строит строку входящей / общей транзакции."""
         date_pay = payment.get("date_pay")
         iso = (
             datetime.fromisoformat(date_pay).strftime("%Y-%m-%dT%H:%M:%S")
@@ -196,7 +196,7 @@ class FeeService(BaseService):
 
     @staticmethod
     def _build_expense_row(iso: str, cost: float, comment: str) -> dict[str, Any]:
-        """Build a service-period expense row (cost is negated)."""
+        """Строит строку расхода за период услуги (стоимость инвертируется)."""
         return {
             "date": iso,
             "debit": -cost,
@@ -206,7 +206,7 @@ class FeeService(BaseService):
 
 
 def _days(n: int):
-    """Return a :class:`timedelta` of ``n`` days (kept tiny for readability)."""
+    """Возвращает :class:`timedelta` на ``n`` дней (функция оставлена миниатюрной ради читаемости)."""
     from datetime import timedelta
 
     return timedelta(days=n)

@@ -1,8 +1,8 @@
 """
-FastAPI application package.
+Пакет FastAPI-приложения.
 
-This package contains a Python 3.12 / FastAPI port of the original
-PHP Slim 4 mobile-application API (``mpa_slim``).  Public entry point:
+Этот пакет содержит Python 3.12 / FastAPI-порт исходного
+PHP Slim 4 мобильного API (``mpa_slim``). Публичная точка входа:
 ``app.main:app``.
 """
 

@@ -1,10 +1,10 @@
-"""FastAPI application entry point.
+"""Точка входа FastAPI-приложения.
 
-Run locally with::
+Локальный запуск::
 
     uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
 
-Or via the Docker setup (see ``docker-compose.yml``).
+Или через Docker-конфигурацию (см. ``docker-compose.yml``).
 """
 
 from __future__ import annotations
@@ -24,27 +24,27 @@ from app.middleware.request_logging import RequestLoggingMiddleware
 
 @asynccontextmanager
 async def _lifespan(_: FastAPI) -> AsyncIterator[None]:
-    """Application lifespan — initialises logging on startup.
+    """Жизненный цикл (lifespan) приложения — инициализирует логирование при запуске.
 
     Args:
-        _: The FastAPI application instance (unused).
+        _: Экземпляр FastAPI-приложения (не используется).
 
     Yields:
-        ``None`` — no resources are held between startup and shutdown.
+        ``None`` — между запуском и остановкой никакие ресурсы не удерживаются.
     """
     setup_logging()
     yield
 
 
 def create_app() -> FastAPI:
-    """Build and return the configured :class:`FastAPI` application.
+    """Собрать и вернуть настроенный :class:`FastAPI`-приложения.
 
     Returns:
-        A ready-to-serve FastAPI instance.
+        Готовый к обслуживанию экземпляр FastAPI.
     """
     app = FastAPI(
         title="MPA FastAPI",
-        description="Python 3.12 / FastAPI port of the mpa_slim (Slim 4) mobile-application API.",
+        description="Порт на Python 3.12 / FastAPI мобильного API mpa_slim (Slim 4).",
         version="1.0.0",
         debug=settings.app_debug,
         lifespan=_lifespan,
@@ -53,33 +53,33 @@ def create_app() -> FastAPI:
         openapi_url="/openapi.json",
     )
 
-    # Middleware (order matters: outermost first).
+    # Middleware (порядок важен: сначала внешний).
     install_cors(app)
     app.add_middleware(RequestLoggingMiddleware)
 
     # Routes
     app.include_router(api_router)
 
-    # Health endpoint (outside /api/v1).
-    @app.get("/health", tags=["meta"], summary="Liveness probe.")
+    # Health-эндпоинт (вне /api/v1).
+    @app.get("/health", tags=["meta"], summary="Проверка живости.")
     def health() -> dict[str, str]:
-        """Return ``{"status": "ok"}`` if the process is alive.
+        """Вернуть ``{"status": "ok"}``, если процесс жив.
 
         Returns:
-            A small dict used by container orchestrators as a liveness probe.
+            Небольшой словарь, используемый оркестраторами контейнеров как проверка живости.
         """
         return {"status": "ok"}
 
-    # Exception handlers
+    # Обработчики исключений
     install_exception_handlers(app)
 
-    # Make sure the logger exists even before the first request.
+    # Убедиться, что логгер существует ещё до первого запроса.
     setup_logging()
     app.state.logger_name = LOGGER_NAME
     return app
 
 
-#: Module-level application instance used by ``uvicorn app.main:app``.
+#: Экземпляр приложения на уровне модуля, используемый ``uvicorn app.main:app``.
 app = create_app()
 
 

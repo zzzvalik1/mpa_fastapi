@@ -1,4 +1,4 @@
-"""Tariff endpoints (``GET .../tariffs``)."""
+"""Эндпоинты тарифов (``GET .../tariffs``)."""
 
 from __future__ import annotations
 
@@ -22,16 +22,16 @@ def get_tariffs(
     uid: CurrentUid,
     service: TariffServiceDep,
 ) -> Envelope[list]:
-    """Return the list of tariffs available for switching.
+    """Вернуть список тарифов, доступных для смены.
 
     Args:
-        account_id: Path account id.
-        service_id: Path service id.
-        uid: Authenticated user id.
-        service: Injected :class:`TariffService`.
+        account_id: id аккаунта из пути.
+        service_id: id услуги из пути.
+        uid: id аутентифицированного пользователя.
+        service: Внедрённый :class:`TariffService`.
 
     Returns:
-        An :class:`Envelope` whose ``data`` is the tariff list.
+        :class:`Envelope`, у которого ``data`` — список тарифов.
     """
     return Envelope(
         success=True,

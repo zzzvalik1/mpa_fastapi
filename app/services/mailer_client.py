@@ -1,6 +1,6 @@
-"""HTTP client for the external mailer gateway.
+"""HTTP-клиент внешнего mailer-шлюза.
 
-Replaces the original PHP ``App/Helper/MailerSend.php`` (which used cURL).
+Заменяет исходный PHP-класс ``App/Helper/MailerSend.php`` (который использовал cURL).
 """
 
 from __future__ import annotations
@@ -16,12 +16,12 @@ from app.core.logging import get_logger
 
 @dataclass(frozen=True, slots=True)
 class MailResult:
-    """Normalised result returned by :meth:`MailerClient.send_email`.
+    """Нормализованный результат, возвращаемый :meth:`MailerClient.send_email`.
 
     Attributes:
-        success: Whether the gateway reported success.
-        message: Status / error message from the gateway.
-        raw: The raw response body (string).
+        success: Успех по отчёту шлюза.
+        message: Статус / сообщение об ошибке от шлюза.
+        raw: Сырой body-ответ (string).
     """
 
     success: bool
@@ -30,18 +30,18 @@ class MailResult:
 
 
 class MailerClient:
-    """Thin sync wrapper around the external mailer HTTP gateway.
+    """Тонкий sync-обвертка вокруг внешнего mailer HTTP-шлюза.
 
-    The original PHP code POSTs a multipart-ish JSON payload to
-    ``Settings.mail_url`` with the API key embedded.  We reproduce the
-    contract using :mod:`httpx` (sync client) for easier testability.
+    Исходный PHP-код отправляет multipart-подобный JSON-payload на
+    ``Settings.mail_url`` с встроенным API-ключом.  Мы воспроизводим
+    контракт с помощью :mod:`httpx` (sync-клиент) для удобства тестирования.
     """
 
     def __init__(self, settings: Settings = _settings) -> None:
-        """Initialise the client with application settings.
+        """Инициализирует клиент настройками приложения.
 
         Args:
-            settings: Application settings (defaults to the global singleton).
+            settings: Настройки приложения (по умолчанию — глобальный singleton).
         """
         self._settings = settings
         self._logger = get_logger()
@@ -57,17 +57,17 @@ class MailerClient:
         message: str,
         service: str = "mlk_send_mail",
     ) -> MailResult:
-        """Send a transactional email via the gateway.
+        """Отправляет транзакционный email через шлюз.
 
         Args:
-            sender: ``From`` address.
-            to: ``To`` address.
-            subject: Email subject.
-            message: Email body (HTML).
-            service: Gateway service name (default ``mlk_send_mail``).
+            sender: Адрес ``From``.
+            to: Адрес ``To``.
+            subject: Тема email.
+            message: Тело email (HTML).
+            service: Имя сервиса шлюза (по умолчанию ``mlk_send_mail``).
 
         Returns:
-            A :class:`MailResult` describing the outcome.
+            :class:`MailResult`, описывающий результат.
         """
         payload_data = {
             "from": sender,

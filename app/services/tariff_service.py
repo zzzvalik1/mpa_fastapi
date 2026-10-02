@@ -1,4 +1,4 @@
-"""Tariff service (mirrors ``App/Controller/TariffController.php``)."""
+"""Сервис тарифов (порт ``App/Controller/TariffController.php``)."""
 
 from __future__ import annotations
 
@@ -14,20 +14,20 @@ from app.services.base_service import BaseService
 
 
 class TariffService(BaseService):
-    """Returns the list of tariffs available for switching."""
+    """Возвращает список тарифов, доступных для переключения."""
 
     def get_tariffs(
         self, uid: int, account_id: int, service_id: int
     ) -> list[dict[str, Any]]:
-        """Return the list of tariffs for ``GET .../tariffs``.
+        """Возвращает список тарифов для ``GET .../tariffs``.
 
         Args:
-            uid: Authenticated user id.
-            account_id: Path account id.
-            service_id: Path service id.
+            uid: Идентификатор аутентифицированного пользователя.
+            account_id: Идентификатор аккаунта из пути.
+            service_id: Идентификатор услуги из пути.
 
         Returns:
-            A list of tariff dicts.
+            Список dict тарифов.
         """
         user = self.customer_repo.find_subscriber_by_uid(uid)
         if not user:
@@ -103,7 +103,7 @@ class TariffService(BaseService):
 
 
 def _duration_slug(duration: int) -> str:
-    """Map a duration id to a frequency string (see :mod:`service_service`)."""
+    """Сопоставляет идентификатор duration со строкой периодичности (см. :mod:`service_service`)."""
     if duration in (1, 3, 6):
         return "month"
     if duration == 2:

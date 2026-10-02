@@ -1,4 +1,4 @@
-"""Fee repository (mirrors ``App/Service/Fee.php``)."""
+"""Репозиторий платежей (порт ``App/Service/Fee.php``)."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from app.repositories.base import BaseRepository
 
 
 class FeeRepository(BaseRepository):
-    """Read access to the ``FEE`` / ``FREEZING`` tables for transaction history."""
+    """Доступ на чтение к таблицам ``FEE`` / ``FREEZING`` для истории транзакций."""
 
     def get_payments_by_uid(
         self,
@@ -16,15 +16,15 @@ class FeeRepository(BaseRepository):
         start_date: str | None = None,
         end_date: str | None = None,
     ) -> list[dict[str, Any]]:
-        """Return all payments for the user, optionally filtered by date range.
+        """Вернуть все платежи пользователя, опционально отфильтрованные по диапазону дат.
 
         Args:
-            uid: Customer id.
-            start_date: Optional inclusive lower bound (ISO-8601).
-            end_date:   Optional inclusive upper bound (ISO-8601).
+            uid: Идентификатор клиента.
+            start_date: Необязательная нижняя граница включительно (ISO-8601).
+            end_date:   Необязательная верхняя граница включительно (ISO-8601).
 
         Returns:
-            A list of ``FEE`` rows as dicts (newest first).
+            Список строк ``FEE`` как словари (сначала новые).
         """
         where = ["`uid` = :uid"]
         params: dict[str, Any] = {"uid": uid}
@@ -43,13 +43,13 @@ class FeeRepository(BaseRepository):
         return self._fetchall(sql, params)
 
     def get_freeze_description(self, fid: int) -> str:
-        """Return the human-readable description of a freeze-related fee row.
+        """Вернуть человекочитаемое описание строки платежа, связанной с заморозкой.
 
         Args:
-            fid: ``FEE.fid`` value.
+            fid: Значение ``FEE.fid``.
 
         Returns:
-            Localised description (empty string if not found).
+            Локализованное описание (пустая строка, если не найдено).
         """
         sql = """
             SELECT CONCAT(

@@ -1,15 +1,17 @@
-"""Web-client-log repository (mirrors ``App/Service/Webclientlog.php``).
+"""Репозиторий webclient-лога (порт ``App/Service/Webclientlog.php``).
 
-Writes to the ``webclient_logs`` table in the **webclient database** (DB #2).
+Записывает в таблицу ``webclient_logs`` в **базе данных webclient** (БД №2).
 """
 
 from __future__ import annotations
+
+from typing import Any
 
 from app.repositories.base import BaseRepository
 
 
 class WebClientLogRepository(BaseRepository):
-    """Append-only writer for the ``webclient_logs`` audit table."""
+    """Репозиторий только-на-добавление для аудиторской таблицы ``webclient_logs``."""
 
     def insert_webclientlog(
         self,
@@ -22,19 +24,19 @@ class WebClientLogRepository(BaseRepository):
         after_: str | None = None,
         type_: str | None = None,
     ) -> int | None:
-        """Insert a single audit row.
+        """Вставить одну аудиторскую строку.
 
         Args:
-            user_id: Acting user id.
-            client_id: Client id (default 1 — MLK).
-            log_info: Short description of the action.
-            ip_addr: Request IP.
-            before_: Optional serialised "before" state.
-            after_: Optional serialised "after" state.
-            type_: Optional type tag.
+            user_id: id действующего пользователя.
+            client_id: id клиента (по умолчанию 1 — MLK).
+            log_info: Краткое описание действия.
+            ip_addr: IP запроса.
+            before_: Необязательное сериализованное состояние "до".
+            after_: Необязательное сериализованное состояние "после".
+            type_: Необязательная метка типа.
 
         Returns:
-            The new ``webclient_logs.Id``, or ``None`` on failure.
+            Новый ``webclient_logs.Id`` или ``None`` при неудаче.
         """
         sql = """
             INSERT INTO `webclient_logs`

@@ -1,4 +1,4 @@
-"""Push-notification worker endpoints."""
+"""Эндпоинты push-воркеров."""
 
 from __future__ import annotations
 
@@ -17,13 +17,13 @@ router = APIRouter(prefix="/notifications", tags=["notifications"])
     summary="Разослать PUSH-уведомления.",
 )
 def send_messages(service: PushServiceDep) -> Envelope:
-    """Flush all waiting push messages to the gateway.
+    """Отправить все ожидающие push-сообщения в шлюз.
 
     Args:
-        service: Injected :class:`PushService`.
+        service: Внедрённый :class:`PushService`.
 
     Returns:
-        An :class:`Envelope` describing the outcome.
+        :class:`Envelope`, описывающий результат.
     """
     result = service.send_messages()
     return Envelope(
@@ -40,7 +40,7 @@ def send_messages(service: PushServiceDep) -> Envelope:
     summary="Проверить статус PUSH-уведомлений.",
 )
 def status_messages(service: PushServiceDep) -> Envelope:
-    """Refresh the status of recently-sent push messages."""
+    """Обновить статус недавно отправленных push-сообщений."""
     result = service.status_messages()
     return Envelope(
         success=bool(result.get("success")),
@@ -56,7 +56,7 @@ def status_messages(service: PushServiceDep) -> Envelope:
     summary="Проверить статус задержавшихся PUSH-уведомлений.",
 )
 def status_messages_old(service: PushServiceDep) -> Envelope:
-    """Refresh the status of long-pending push messages (retry 15..19)."""
+    """Обновить статус давно ожидающих push-сообщений (retry 15..19)."""
     result = service.status_messages_old()
     return Envelope(
         success=bool(result.get("success")),

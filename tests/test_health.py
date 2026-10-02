@@ -1,4 +1,4 @@
-"""Smoke tests — verify the app boots and the health endpoint responds."""
+"""Smoke-тесты — проверка что приложение запускается и health-эндпоинт отвечает."""
 
 from __future__ import annotations
 
@@ -6,14 +6,14 @@ from fastapi.testclient import TestClient
 
 
 def test_health(app_client: TestClient) -> None:
-    """``GET /health`` should return 200 and ``{"status": "ok"}``."""
+    """``GET /health`` должен вернуть 200 и ``{"status": "ok"}``."""
     response = app_client.get("/health")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
 
 
 def test_openapi_available(app_client: TestClient) -> None:
-    """``GET /openapi.json`` should return the OpenAPI schema."""
+    """``GET /openapi.json`` должен вернуть OpenAPI-схему."""
     response = app_client.get("/openapi.json")
     assert response.status_code == 200
     schema = response.json()
@@ -21,7 +21,7 @@ def test_openapi_available(app_client: TestClient) -> None:
 
 
 def test_unknown_route_returns_envelope(app_client: TestClient) -> None:
-    """Unknown routes should return the canonical JSON envelope."""
+    """Неизвестные маршруты должны возвращать канонический JSON-конверт."""
     response = app_client.get("/api/v1/does-not-exist")
     assert response.status_code == 404
     body = response.json()

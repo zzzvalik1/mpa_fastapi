@@ -1,9 +1,9 @@
-"""Application settings.
+"""Настройки приложения.
 
-All configuration is loaded from environment variables (or a local ``.env``
-file) and validated by Pydantic Settings v2.  The settings instance is a
-singleton exposed as :data:`settings` and is safe to import from anywhere
-inside the application.
+Вся конфигурация загружается из переменных окружения (или локального файла
+``.env``) и валидируется Pydantic Settings v2. Экземпляр настроек является
+синглтоном, доступным как :data:`settings`, и его безопасно импортировать
+из любого места приложения.
 """
 
 from __future__ import annotations
@@ -16,10 +16,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """Strongly-typed application configuration.
+    """Строго типизированная конфигурация приложения.
 
-    All fields map 1:1 to the environment variables documented in
-    ``.env.example``.  Field names are case-insensitive on load.
+    Все поля отображаются 1:1 на переменные окружения, описанные в
+    ``.env.example``. Имена полей при загрузке нечувствительны к регистру.
     """
 
     model_config = SettingsConfigDict(
@@ -32,19 +32,19 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------------ #
     # Application
     # ------------------------------------------------------------------ #
-    app_name: str = Field(default="MLK_company", description="JWT ``iss`` claim.")
-    app_debug: bool = Field(default=True, description="Show error details in responses.")
-    app_key: str = Field(default="appsecretkey", description="Application secret used in JWT ``jti``.")
+    app_name: str = Field(default="MLK_company", description="Утверждение ``iss`` для JWT.")
+    app_debug: bool = Field(default=True, description="Показывать детали ошибок в ответах.")
+    app_key: str = Field(default="appsecretkey", description="Секрет приложения, используемый в JWT ``jti``.")
 
     # ------------------------------------------------------------------ #
     # JWT
     # ------------------------------------------------------------------ #
     jwt_key: str = Field(default="jwtsecretkey")
     jwt_algorithm: str = Field(default="HS256")
-    jwt_lifetime: int = Field(default=3600, description="JWT lifetime in seconds.")
+    jwt_lifetime: int = Field(default=3600, description="Время жизни JWT в секундах.")
 
     # ------------------------------------------------------------------ #
-    # Database #1 — main (CUSTOMER / SERVICE / TARIF / FEE ...)
+    # Database #1 — основная (CUSTOMER / SERVICE / TARIF / FEE ...)
     # ------------------------------------------------------------------ #
     db_host: str = Field(default="127.0.0.1")
     db_port: int = Field(default=3306)
@@ -62,7 +62,7 @@ class Settings(BaseSettings):
     db2_pass: str = Field(default="")
 
     # ------------------------------------------------------------------ #
-    # Database #3 — LK logs (st_logs)
+    # Database #3 — логи ЛК (st_logs)
     # ------------------------------------------------------------------ #
     db3_host: str = Field(default="127.0.0.1")
     db3_port: int = Field(default=3306)
@@ -80,7 +80,7 @@ class Settings(BaseSettings):
     log_retention_days: int = Field(default=30, ge=1, le=365)
 
     # ------------------------------------------------------------------ #
-    # External services
+    # Внешние сервисы
     # ------------------------------------------------------------------ #
     mail_url: str = Field(default="https://messaging.ru/mail/api.php")
     mail_key: str = Field(default="mail_key")
@@ -89,27 +89,27 @@ class Settings(BaseSettings):
     push_key: str = Field(default="push_key")
 
     # ------------------------------------------------------------------ #
-    # Server
+    # Сервер
     # ------------------------------------------------------------------ #
     host: str = Field(default="0.0.0.0")
     port: int = Field(default=8080, ge=1, le=65535)
 
     # ------------------------------------------------------------------ #
-    # Validators
+    # Валидаторы
     # ------------------------------------------------------------------ #
     @field_validator("jwt_algorithm")
     @classmethod
     def _validate_jwt_algorithm(cls, value: str) -> str:
-        """Restrict ``jwt_algorithm`` to the HS-family (symmetric) algorithms.
+        """Ограничить ``jwt_algorithm`` алгоритмами семейства HS (симметричными).
 
         Args:
-            value: Raw environment value.
+            value: Сырое значение из окружения.
 
         Returns:
-            Normalized algorithm name (e.g. ``"HS256"``).
+            Нормализованное имя алгоритма (например ``"HS256"``).
 
         Raises:
-            ValueError: If the algorithm is not in the allowed set.
+            ValueError: Если алгоритма нет среди разрешённых.
         """
         allowed = {"HS256", "HS384", "HS512"}
         if value not in allowed:
@@ -121,16 +121,16 @@ class Settings(BaseSettings):
     @field_validator("log_level")
     @classmethod
     def _validate_log_level(cls, value: str) -> str:
-        """Normalize the log level to an uppercase standard value.
+        """Нормализовать уровень логирования к стандартному значению в верхнем регистре.
 
         Args:
-            value: Raw environment value.
+            value: Сырое значение из окружения.
 
         Returns:
-            Uppercase level name.
+            Имя уровня в верхнем регистре.
 
         Raises:
-            ValueError: If the level is not recognised by the ``logging`` module.
+            ValueError: Если уровень не распознан модулем ``logging``.
         """
         import logging
 
@@ -140,47 +140,47 @@ class Settings(BaseSettings):
         return upper
 
     # ------------------------------------------------------------------ #
-    # Helpers
+    # Хелперы
     # ------------------------------------------------------------------ #
     @property
     def log_level_int(self) -> int:
-        """Return the numeric log level for the configured :attr:`log_level`."""
+        """Вернуть числовой уровень логирования для настроенного :attr:`log_level`."""
         import logging
 
         return getattr(logging, self.log_level)
 
     @property
     def db_dsn_main(self) -> str:
-        """Return the SQLAlchemy URL for the main database."""
+        """Вернуть SQLAlchemy URL для основной базы данных."""
         return self._build_dsn(self.db_host, self.db_port, self.db_name, self.db_user, self.db_pass)
 
     @property
     def db_dsn_client(self) -> str:
-        """Return the SQLAlchemy URL for the webclient_logs database."""
+        """Вернуть SQLAlchemy URL для базы данных webclient_logs."""
         return self._build_dsn(
             self.db2_host, self.db2_port, self.db2_name, self.db2_user, self.db2_pass
         )
 
     @property
     def db_dsn_lk(self) -> str:
-        """Return the SQLAlchemy URL for the LK logs database."""
+        """Вернуть SQLAlchemy URL для базы данных логов ЛК."""
         return self._build_dsn(
             self.db3_host, self.db3_port, self.db3_name, self.db3_user, self.db3_pass
         )
 
     @staticmethod
     def _build_dsn(host: str, port: int, name: str, user: str, password: str) -> str:
-        """Build a PyMySQL-style SQLAlchemy URL.
+        """Построить SQLAlchemy URL в стиле PyMySQL.
 
         Args:
-            host: Database host.
-            port: Database port.
-            name: Database (schema) name.
-            user: Database user.
-            password: Database password.
+            host: Хост базы данных.
+            port: Порт базы данных.
+            name: Имя базы данных (схемы).
+            user: Пользователь базы данных.
+            password: Пароль базы данных.
 
         Returns:
-            A ``mysql+pymysql://...`` connection URL with URL-encoded credentials.
+            URL подключения ``mysql+pymysql://...`` с URL-кодированными учётными данными.
         """
         from urllib.parse import quote_plus
 
@@ -190,17 +190,17 @@ class Settings(BaseSettings):
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
-    """Return a cached :class:`Settings` instance.
+    """Вернуть кэшированный экземпляр :class:`Settings`.
 
-    The cache ensures that environment parsing happens only once per process.
+    Кэш гарантирует, что разбор переменных окружения выполняется один раз за процесс.
 
     Returns:
-        The application-wide :class:`Settings` singleton.
+        Общедоменный :class:`Settings`-синглтон приложения.
     """
     return Settings()
 
 
-#: Module-level singleton used by the rest of the application.
+#: Синглтон на уровне модуля, используемый остальным приложением.
 settings: Settings = get_settings()
 
 

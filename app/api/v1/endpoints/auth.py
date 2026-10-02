@@ -1,4 +1,4 @@
-"""Auth endpoints (``POST /auth/token``, ``POST /auth/logout``)."""
+"""Эндпоинты аутентификации (``POST /auth/token``, ``POST /auth/logout``)."""
 
 from __future__ import annotations
 
@@ -23,14 +23,14 @@ def login(
     body: LoginRequest,
     service: AuthServiceDep,
 ) -> Envelope[dict]:
-    """Authenticate a subscriber and return a signed JWT.
+    """Аутентифицировать подписчика и вернуть подписанный JWT.
 
     Args:
-        body: Login request body (PIN + password).
-        service: Injected :class:`AuthService`.
+        body: Тело запроса на вход (PIN + пароль).
+        service: Внедрённый :class:`AuthService`.
 
     Returns:
-        An :class:`Envelope` whose ``data`` is ``{"id": <uid>, "jwt": <token>}``.
+        :class:`Envelope`, у которого ``data`` равно ``{"id": <uid>, "jwt": <token>}``.
     """
     data = service.login(body.username, body.password)
     return Envelope(success=True, data=data, message="success", code=200)
@@ -43,17 +43,17 @@ def login(
     summary="Выход из приложения.",
 )
 def logout(uid: CurrentUid, service: AuthServiceDep) -> Envelope[None]:
-    """Log out the authenticated user.
+    """Выполнить выход для аутентифицированного пользователя.
 
-    The JWT is stateless, so this endpoint only validates that the user
-    still exists and logs the event.
+    JWT — stateless, поэтому этот эндпоинт только проверяет, что
+    пользователь всё ещё существует, и логирует событие.
 
     Args:
-        uid: Authenticated user id.
-        service: Injected :class:`AuthService`.
+        uid: id аутентифицированного пользователя.
+        service: Внедрённый :class:`AuthService`.
 
     Returns:
-        An empty success :class:`Envelope`.
+        Пустой успешный :class:`Envelope`.
     """
     service.logout(uid)
     return Envelope(success=True, message="success", code=200)

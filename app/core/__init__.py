@@ -1,1 +1,1 @@
-"""Core application modules (config, logging, security, exceptions)."""
+"""Основные модули приложения (конфигурация, логирование, безопасность, исключения)."""

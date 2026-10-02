@@ -1,8 +1,8 @@
-"""Central exception handlers.
+"""Центральные обработчики исключений.
 
-These handlers convert the application-defined exceptions (see
-:mod:`app.core.exceptions`) and a few FastAPI / Pydantic errors into the
-canonical JSON envelope used by the mobile application:
+Эти обработчики преобразуют определённые в приложении исключения (см.
+:mod:`app.core.exceptions`) и ряд ошибок FastAPI / Pydantic в канонический
+JSON-конверт, используемый мобильным приложением:
 
 ::
 
@@ -28,16 +28,16 @@ from app.core.logging import get_logger
 
 
 def _envelope(success: bool, message: str, code: int, **extra: Any) -> dict[str, Any]:
-    """Build the canonical response envelope.
+    """Построить канонический конверт ответа.
 
     Args:
-        success: ``True`` for success responses, ``False`` for errors.
-        message: Human-readable message.
-        code: HTTP status code.
-        **extra: Additional keys to merge into the envelope (e.g. ``data``).
+        success: ``True`` для успешных ответов, ``False`` для ошибок.
+        message: Человекочитаемое сообщение.
+        code: HTTP-код статуса.
+        **extra: Дополнительные ключи для слияния в конверт (например ``data``).
 
     Returns:
-        A dict suitable for :class:`fastapi.responses.JSONResponse`.
+        Словарь, подходящий для :class:`fastapi.responses.JSONResponse`.
     """
     payload: dict[str, Any] = {
         "success": success,
@@ -49,19 +49,19 @@ def _envelope(success: bool, message: str, code: int, **extra: Any) -> dict[str,
 
 
 def install_exception_handlers(app: FastAPI) -> None:
-    """Register all exception handlers on the given FastAPI application.
+    """Зарегистрировать все обработчики исключений в данном FastAPI-приложении.
 
     Args:
-        app: The FastAPI application instance.
+        app: Экземпляр FastAPI-приложения.
     """
     logger = get_logger()
 
     # ------------------------------------------------------------------ #
-    # AppError — every business / domain error inherits from it.
+    # AppError — от него наследуется каждая бизнес / доменная ошибка.
     # ------------------------------------------------------------------ #
     @app.exception_handler(AppError)
     async def _handle_app_error(_: Request, exc: AppError) -> JSONResponse:
-        """Convert an :class:`AppError` to the canonical JSON envelope."""
+        """Преобразовать :class:`AppError` в канонический JSON-конверт."""
         logger.warning("AppError: %s (status=%s)", exc.message, exc.status_code)
         return JSONResponse(
             status_code=exc.status_code,
@@ -70,11 +70,11 @@ def install_exception_handlers(app: FastAPI) -> None:
         )
 
     # ------------------------------------------------------------------ #
-    # DatabaseError — log full traceback, return 502.
+    # DatabaseError — записать полный traceback, вернуть 502.
     # ------------------------------------------------------------------ #
     @app.exception_handler(DatabaseError)
     async def _handle_database_error(_: Request, exc: DatabaseError) -> JSONResponse:
-        """Convert a :class:`DatabaseError` to a 502 response."""
+        """Преобразовать :class:`DatabaseError` в ответ 502."""
         logger.exception("Database error: %s", exc.message)
         return JSONResponse(
             status_code=exc.status_code,
@@ -83,13 +83,13 @@ def install_exception_handlers(app: FastAPI) -> None:
         )
 
     # ------------------------------------------------------------------ #
-    # FastAPI request validation errors (Pydantic v2).
+    # Ошибки валидации запросов FastAPI (Pydantic v2).
     # ------------------------------------------------------------------ #
     @app.exception_handler(RequestValidationError)
     async def _handle_request_validation_error(
         _: Request, exc: RequestValidationError
     ) -> JSONResponse:
-        """Return a 422 with the canonical envelope plus a ``details`` list."""
+        """Вернуть 422 с каноническим конвертом плюс список ``details``."""
         logger.warning("Validation error: %s", exc.errors())
         return JSONResponse(
             status_code=422,
@@ -103,13 +103,13 @@ def install_exception_handlers(app: FastAPI) -> None:
         )
 
     # ------------------------------------------------------------------ #
-    # Starlette HTTPException (404, 405, ...) — keep FastAPI's behaviour.
+    # Starlette HTTPException (404, 405, ...) — сохранить поведение FastAPI.
     # ------------------------------------------------------------------ #
     @app.exception_handler(StarletteHTTPException)
     async def _handle_http_exception(
         _: Request, exc: StarletteHTTPException
     ) -> JSONResponse:
-        """Convert a Starlette :class:`HTTPException` to the JSON envelope."""
+        """Преобразовать Starlette :class:`HTTPException` в JSON-конверт."""
         message = exc.detail if isinstance(exc.detail, str) else "http error"
         logger.info("HTTP %s — %s", exc.status_code, message)
         return JSONResponse(
@@ -119,15 +119,15 @@ def install_exception_handlers(app: FastAPI) -> None:
         )
 
     # ------------------------------------------------------------------ #
-    # Catch-all for any other unhandled exception.
+    # Перехватчик для любого иного необработанного исключения.
     # ------------------------------------------------------------------ #
     @app.exception_handler(Exception)
     async def _handle_unexpected_error(_: Request, exc: Exception) -> JSONResponse:
-        """Convert any unexpected exception to a 500 response.
+        """Преобразовать любое непредвиденное исключение в ответ 500.
 
-        The original exception is logged with full traceback.  The error
-        message returned to the client is generic on purpose, to avoid
-        leaking internal details.
+        Исходное исключение записывается в лог с полным traceback. Сообщение
+        об ошибке, возвращаемое клиенту, намеренно общее, чтобы избежать
+        утечки внутренних деталей.
         """
         logger.exception("Unhandled exception: %s", exc)
         return JSONResponse(

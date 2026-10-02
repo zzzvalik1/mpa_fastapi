@@ -1,4 +1,4 @@
-"""Resource endpoints (``GET /resources/promised-pay-terms``)."""
+"""Эндпоинты ресурсов (``GET /resources/promised-pay-terms``)."""
 
 from __future__ import annotations
 
@@ -20,14 +20,14 @@ def promised_pay_terms(
     uid: CurrentUid,
     service: CustomerServiceDep,
 ) -> Envelope[str]:
-    """Return the static HTML describing the promised-pay terms.
+    """Вернуть статический HTML с описанием условий обещанного платежа.
 
     Args:
-        uid: Authenticated user id.
-        service: Injected :class:`CustomerService`.
+        uid: id аутентифицированного пользователя.
+        service: Внедрённый :class:`CustomerService`.
 
     Returns:
-        An :class:`Envelope` whose ``data`` is the HTML string.
+        :class:`Envelope`, у которого ``data`` — HTML-строка.
     """
     return Envelope(
         success=True,

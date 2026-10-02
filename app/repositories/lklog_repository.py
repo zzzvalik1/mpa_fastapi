@@ -1,6 +1,6 @@
-"""LK-log repository (mirrors ``App/Service/Lklog.php``).
+"""Репозиторий LK-лога (порт ``App/Service/Lklog.php``).
 
-Writes to the ``st_logs`` table in the **LK database** (DB #3).
+Записывает в таблицу ``st_logs`` в **LK-базе данных** (БД №3).
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ from app.repositories.base import BaseRepository
 
 
 class LkLogRepository(BaseRepository):
-    """Append-only writer for the ``st_logs`` audit table."""
+    """Репозиторий только-на-добавление для аудиторской таблицы ``st_logs``."""
 
     def insert_lklog(
         self,
@@ -23,18 +23,18 @@ class LkLogRepository(BaseRepository):
         after_: str | None = None,
         type_: str | None = None,
     ) -> int | None:
-        """Insert a single audit row.
+        """Вставить одну аудиторскую строку.
 
         Args:
-            user_id: Acting user id (``None`` for anonymous).
-            log_info: Short description of the action.
-            ip_addr: Request IP.
-            before_: Optional serialised "before" state.
-            after_: Optional serialised "after" state.
-            type_: Optional type tag (e.g. ``tarifChange``).
+            user_id: id действующего пользователя (``None`` для анонима).
+            log_info: Краткое описание действия.
+            ip_addr: IP запроса.
+            before_: Необязательное сериализованное состояние "до".
+            after_: Необязательное сериализованное состояние "после".
+            type_: Необязательная метка типа (например ``tarifChange``).
 
         Returns:
-            The new ``st_logs.Id``, or ``None`` on failure.
+            Новый ``st_logs.Id`` или ``None`` при неудаче.
         """
         sql = """
             INSERT INTO `st_logs`

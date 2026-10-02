@@ -1,11 +1,11 @@
-"""Service-domain service (mirrors ``App/Controller/ServiceController.php``).
+"""Сервис услуг (порт ``App/Controller/ServiceController.php``).
 
-Implements:
+Реализует:
 
-* ``GET    .../services``                                → list services
-* ``PATCH   .../services/{serviceId}``                   → change tariff / suspend / unsuspend
-* ``GET    .../services/{serviceId}/additional-services`` → list available add-ons
-* ``PATCH   .../services/{serviceId}/additional-services/{AdditionalServiceId}`` → subscribe/unsubscribe
+* ``GET    .../services``                                → список услуг
+* ``PATCH   .../services/{serviceId}``                   → смена тарифа / suspend / unsuspend
+* ``GET    .../services/{serviceId}/additional-services`` → список доступных доп. услуг
+* ``PATCH   .../services/{serviceId}/additional-services/{AdditionalServiceId}`` → подписка/отписка
 """
 
 from __future__ import annotations
@@ -36,14 +36,14 @@ _TYPE_SLUG_MAP: dict[int, str] = {
 
 
 def _type_slug(tariff_type: int | None) -> str:
-    """Return the MLK service-type slug for a numeric tariff type."""
+    """Возвращает MLK-слаг типа услуги для числового типа тарифа."""
     if tariff_type is None:
         return "type_misc"
     return _TYPE_SLUG_MAP.get(tariff_type, "type_misc")
 
 
 def _duration_slug(duration: int | None) -> str:
-    """Map a ``TARIF.duration`` id to a human-readable frequency string."""
+    """Сопоставляет ``TARIF.duration`` с человекочитаемой строкой периодичности."""
     if duration in (1, 3, 6):
         return "month"
     if duration == 2:
@@ -54,7 +54,7 @@ def _duration_slug(duration: int | None) -> str:
 
 
 def _status_block(code: int, title: str | None) -> dict[str, Any]:
-    """Build the ``state`` block from a numeric status code."""
+    """Строит блок ``state`` из числового кода статуса."""
     is_unlock = code == 1
     return {
         "id": code,
@@ -65,7 +65,7 @@ def _status_block(code: int, title: str | None) -> dict[str, Any]:
 
 
 class ServiceService(BaseService):
-    """High-level service / tariff / additional-service operations."""
+    """Высокоуровневые операции с услугами / тарифами / доп. услугами."""
 
     def __init__(
         self,
@@ -78,17 +78,17 @@ class ServiceService(BaseService):
         mailer: MailerClient,
         client_ip: str = "",
     ) -> None:
-        """Initialise the service.
+        """Инициализирует сервис.
 
         Args:
-            customer_repo: Customer repository.
-            service_repo: Service repository.
-            tariff_repo: Tariff repository.
-            fee_repo: Fee repository (unused here but kept for API symmetry).
-            lklog_repo: LK-log repository.
-            webclientlog_repo: Webclient-log repository.
-            mailer: Mailer client used to send tariff-change notifications.
-            client_ip: IP of the calling client.
+            customer_repo: Репозиторий клиентов.
+            service_repo: Репозиторий услуг.
+            tariff_repo: Репозиторий тарифов.
+            fee_repo: Репозиторий платежей (не используется здесь, но сохранён для симметрии API).
+            lklog_repo: Репозиторий LK-логов.
+            webclientlog_repo: Репозиторий webclient-логов.
+            mailer: Mailer-клиент для отправки уведомлений о смене тарифа.
+            client_ip: IP вызывающего клиента.
         """
         super().__init__(
             customer_repo=customer_repo,
@@ -105,18 +105,18 @@ class ServiceService(BaseService):
     # GET .../services
     # ------------------------------------------------------------------ #
     def get_services(self, uid: int, account_id: int) -> list[dict[str, Any]]:
-        """Return the list of services for ``GET .../services``.
+        """Возвращает список услуг для ``GET .../services``.
 
         Args:
-            uid: Authenticated user id.
-            account_id: Path account id (must equal ``uid``).
+            uid: Идентификатор аутентифицированного пользователя.
+            account_id: Идентификатор аккаунта из пути (должен совпадать с ``uid``).
 
         Returns:
-            A list of service dicts (primary first, then add-ons).
+            Список dict услуг (сначала основной, затем доп. услуги).
 
         Raises:
-            NotFoundError: If the user cannot be found.
-            AuthorizationError: If ``account_id`` does not match ``uid``.
+            NotFoundError: Если пользователь не найден.
+            AuthorizationError: Если ``account_id`` не совпадает с ``uid``.
         """
         user = self.customer_repo.find_customer_by_uid(uid)
         if not user:
@@ -262,19 +262,19 @@ class ServiceService(BaseService):
         date_start: str | None = None,
         date_end: str | None = None,
     ) -> dict[str, Any]:
-        """Apply a ``change-tariff`` / ``suspend`` / ``unsuspend`` action.
+        """Применяет действие ``change-tariff`` / ``suspend`` / ``unsuspend``.
 
         Args:
-            uid: Authenticated user id.
-            account_id: Path account id.
-            service_id: Path service id.
-            action: Action name.
-            tariff_id: Target tariff id (required for ``change-tariff``).
-            date_start: Optional freeze start (for ``suspend``).
-            date_end: Optional freeze end (for ``suspend``).
+            uid: Идентификатор аутентифицированного пользователя.
+            account_id: Идентификатор аккаунта из пути.
+            service_id: Идентификатор услуги из пути.
+            action: Имя действия.
+            tariff_id: Идентификатор целевого тарифа (обязателен для ``change-tariff``).
+            date_start: Опциональное начало заморозки (для ``suspend``).
+            date_end: Опциональный конец заморозки (для ``suspend``).
 
         Returns:
-            A dict with ``success`` / ``message`` / ``code`` keys.
+            Словарь с ключами ``success`` / ``message`` / ``code``.
         """
         user = self.customer_repo.find_customer_by_uid(uid)
         if not user:
@@ -310,7 +310,7 @@ class ServiceService(BaseService):
         service: dict[str, Any],
         tariff_id: int,
     ) -> dict[str, Any]:
-        """Execute a tariff change."""
+        """Выполняет смену тарифа."""
         uid = int(user["uid"])
         if not self.is_allow_change_tariff(uid):
             return {"success": False, "message": "changing the tariff is forbidden", "code": 400}
@@ -363,7 +363,7 @@ class ServiceService(BaseService):
         *,
         ordered: bool,
     ) -> None:
-        """Send the tariff-change notification email to support."""
+        """Отправляет email-уведомление о смене тарифа в support."""
         uid = int(user["uid"])
         body = (
             f'Клиент <a href="https://client.ru/showuser/{uid}.html">'
@@ -398,7 +398,7 @@ class ServiceService(BaseService):
         date_start: str | None,
         date_end: str | None,
     ) -> dict[str, Any]:
-        """Execute a service-level suspend (freeze or voluntary block)."""
+        """Выполняет service-level suspend (заморозка или добровольная блокировка)."""
         uid = int(user["uid"])
         if not date_start or not date_end:
             tomorrow, end = self._default_freeze_dates()
@@ -444,7 +444,7 @@ class ServiceService(BaseService):
         user: dict[str, Any],
         service: dict[str, Any],
     ) -> dict[str, Any]:
-        """Execute a service-level unsuspend."""
+        """Выполняет service-level unsuspend."""
         uid = int(user["uid"])
         df_raw = user.get("date_freeze")
         du_raw = user.get("date_unfreeze")
@@ -526,7 +526,7 @@ class ServiceService(BaseService):
     def get_additional_services(
         self, uid: int, account_id: int, service_id: int
     ) -> list[dict[str, Any]]:
-        """Return the catalogue of additional services available for ``service_id``."""
+        """Возвращает каталог доп. услуг, доступных для ``service_id``."""
         user = self.customer_repo.find_customer_by_uid(uid)
         if not user:
             raise NotFoundError("incorrect username")
@@ -620,7 +620,7 @@ class ServiceService(BaseService):
         additional_service_id: int,
         action: int,
     ) -> dict[str, Any]:
-        """Subscribe (``action == 1``) or unsubscribe (``action == 0``) an add-on."""
+        """Подписывает (``action == 1``) или отписывает (``action == 0``) доп. услугу."""
         user = self.customer_repo.find_customer_by_uid(uid)
         if not user:
             raise NotFoundError("incorrect username")
@@ -665,7 +665,7 @@ class ServiceService(BaseService):
         change_tid: int,
         service_id: int,
     ) -> dict[str, Any]:
-        """Unsubscribe an additional service."""
+        """Отписывает доп. услугу."""
         uid = int(user["uid"])
         if not self.is_exist_in_active_service(uid, change_tid, service_id):
             return {
@@ -722,7 +722,7 @@ class ServiceService(BaseService):
         change_tid: int,
         service_id: int,
     ) -> dict[str, Any]:
-        """Subscribe an additional service."""
+        """Подписывает доп. услугу."""
         uid = int(user["uid"])
         # Balance check for non-real-IP add-ons.
         if not trf_change.get("name", "").startswith("[real]"):

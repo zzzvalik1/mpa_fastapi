@@ -1,4 +1,4 @@
-"""Service endpoints (``/subscriber/accounts/{account_id}/services`` group)."""
+"""Эндпоинты услуг (группа ``/subscriber/accounts/{account_id}/services``)."""
 
 from __future__ import annotations
 
@@ -22,15 +22,15 @@ def get_services(
     uid: CurrentUid,
     service: ServiceServiceDep,
 ) -> Envelope[list]:
-    """Return the list of services for the given account.
+    """Вернуть список услуг для указанного аккаунта.
 
     Args:
-        account_id: Path account id.
-        uid: Authenticated user id.
-        service: Injected :class:`ServiceService`.
+        account_id: id аккаунта из пути.
+        uid: id аутентифицированного пользователя.
+        service: Внедрённый :class:`ServiceService`.
 
     Returns:
-        An :class:`Envelope` whose ``data`` is the service list.
+        :class:`Envelope`, у которого ``data`` — список услуг.
     """
     return Envelope(success=True, data=service.get_services(uid, account_id), message="success", code=200)
 
@@ -48,17 +48,17 @@ def change_service(
     uid: CurrentUid,
     service: ServiceServiceDep,
 ) -> Envelope[None]:
-    """Apply a ``change-tariff`` / ``suspend`` / ``unsuspend`` action on a service.
+    """Применить действие ``change-tariff`` / ``suspend`` / ``unsuspend`` к услуге.
 
     Args:
-        account_id: Path account id.
-        service_id: Path service id.
-        body: Action payload.
-        uid: Authenticated user id.
-        service: Injected :class:`ServiceService`.
+        account_id: id аккаунта из пути.
+        service_id: id услуги из пути.
+        body: Полезная нагрузка действия.
+        uid: id аутентифицированного пользователя.
+        service: Внедрённый :class:`ServiceService`.
 
     Returns:
-        An :class:`Envelope` describing the outcome.
+        :class:`Envelope`, описывающий результат.
     """
     result = service.change_service(
         uid, account_id, service_id, body.action,
@@ -85,7 +85,7 @@ def get_additional_services(
     uid: CurrentUid,
     service: ServiceServiceDep,
 ) -> Envelope[list]:
-    """Return the catalogue of additional services available for ``service_id``."""
+    """Вернуть каталог дополнительных услуг, доступных для ``service_id``."""
     return Envelope(
         success=True,
         data=service.get_additional_services(uid, account_id, service_id),
@@ -109,7 +109,7 @@ def set_additional_service(
     uid: CurrentUid,
     service: ServiceServiceDep,
 ) -> Envelope[None]:
-    """Subscribe (``action == 1``) or unsubscribe (``action == 0``) an add-on."""
+    """Подключить (``action == 1``) или отключить (``action == 0``) доп. услугу."""
     result = service.set_additional_service(
         uid, account_id, service_id, additional_service_id, body.action
     )

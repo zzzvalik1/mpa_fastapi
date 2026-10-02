@@ -1,1 +1,1 @@
-"""Middleware sub-package."""
+"""Подпакет middleware."""

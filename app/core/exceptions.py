@@ -1,9 +1,9 @@
-"""Application exception hierarchy.
+"""Иерархия исключений приложения.
 
-All custom exceptions inherit from :class:`AppError`.  Each exception carries
-an HTTP status code and a human-readable message; the central exception
-handler in :mod:`app.core.exception_handlers` converts them to the JSON
-envelope expected by the mobile application:
+Все кастомные исключения наследуются от :class:`AppError`. Каждое исключение
+несёт HTTP-код статуса и человекочитаемое сообщение; центральный обработчик
+исключений в :mod:`app.core.exception_handlers` преобразует их в JSON-конверт,
+ожидаемый мобильным приложением:
 
 ::
 
@@ -13,33 +13,33 @@ envelope expected by the mobile application:
         "code": <http status>
     }
 
-Using dedicated exception classes (instead of raising ``HTTPException``) keeps
-the business logic decoupled from the web layer.
+Использование выделенных классов исключений (вместо возбуждения ``HTTPException``)
+позволяет сохранить бизнес-логику развязанной от веб-слоя.
 """
 
 from __future__ import annotations
 
 
 class AppError(Exception):
-    """Base class for every application-defined exception.
+    """Базовый класс для каждого определённого в приложении исключения.
 
     Attributes:
-        status_code: HTTP status code returned to the client.
-        message: Human-readable error description.
+        status_code: HTTP-код статуса, возвращаемый клиенту.
+        message: Человекочитаемое описание ошибки.
     """
 
-    #: Default HTTP status code (overridden by subclasses).
+    #: HTTP-код статуса по умолчанию (переопределяется подклассами).
     status_code: int = 500
 
-    #: Default error message.
+    #: Сообщение об ошибке по умолчанию.
     default_message: str = "Internal server error."
 
     def __init__(self, message: str | None = None, *, status_code: int | None = None) -> None:
-        """Initialise the exception.
+        """Инициализировать исключение.
 
         Args:
-            message: Optional override for :attr:`default_message`.
-            status_code: Optional override for :attr:`status_code`.
+            message: Необязательное переопределение :attr:`default_message`.
+            status_code: Необязательное переопределение :attr:`status_code`.
         """
         self.message = message or self.default_message
         if status_code is not None:
@@ -51,114 +51,114 @@ class AppError(Exception):
 
 
 # --------------------------------------------------------------------------- #
-# Auth errors
+# Ошибки аутентификации
 # --------------------------------------------------------------------------- #
 class AuthenticationError(AppError):
-    """Raised when authentication credentials are missing or invalid."""
+    """Возбуждается, когда учётные данные для аутентификации отсутствуют или недействительны."""
 
     status_code = 401
     default_message = "Authentication required."
 
 
 class InvalidCredentialsError(AuthenticationError):
-    """Raised when username / password do not match."""
+    """Возбуждается, когда имя пользователя / пароль не совпадают."""
 
     default_message = "incorrect username or password"
 
 
 class UserNotFoundError(AuthenticationError):
-    """Raised when the username cannot be located."""
+    """Возбуждается, когда имя пользователя не удаётся найти."""
 
     default_message = "username is not found"
 
 
 class IncorrectUsernameError(AuthenticationError):
-    """Raised when the username does not match the expected format."""
+    """Возбуждается, когда имя пользователя не соответствует ожидаемому формату."""
 
     default_message = "incorrect username"
 
 
 class InvalidTokenError(AppError):
-    """Raised when a JWT is missing, malformed or fails validation."""
+    """Возбуждается, когда JWT отсутствует, malformed или не проходит валидацию."""
 
     status_code = 401
     default_message = "not valid token"
 
 
 # --------------------------------------------------------------------------- #
-# Authorisation errors
+# Ошибки авторизации
 # --------------------------------------------------------------------------- #
 class AuthorizationError(AppError):
-    """Raised when an authenticated user is not allowed to access a resource."""
+    """Возбуждается, когда аутентифицированному пользователю запрещён доступ к ресурсу."""
 
     status_code = 403
     default_message = "forbidden"
 
 
 # --------------------------------------------------------------------------- #
-# Domain (business) errors — mirror the original ``App/Exception`` classes.
+# Доменные (бизнес) ошибки — зеркалят исходные классы ``App/Exception``.
 # --------------------------------------------------------------------------- #
 class CustomerError(AppError):
-    """Raised for business-rule violations related to a customer."""
+    """Возбуждается при нарушениях бизнес-правил, связанных с клиентом."""
 
     status_code = 400
     default_message = "customer error"
 
 
 class ServiceError(AppError):
-    """Raised for business-rule violations related to a service."""
+    """Возбуждается при нарушениях бизнес-правил, связанных с сервисом."""
 
     status_code = 400
     default_message = "service error"
 
 
 class TariffError(AppError):
-    """Raised for business-rule violations related to a tariff."""
+    """Возбуждается при нарушениях бизнес-правил, связанных с тарифом."""
 
     status_code = 400
     default_message = "tariff error"
 
 
 class FeeError(AppError):
-    """Raised for business-rule violations related to fees / transactions."""
+    """Возбуждается при нарушениях бизнес-правил, связанных со сборами / транзакциями."""
 
     status_code = 400
     default_message = "fee error"
 
 
 # --------------------------------------------------------------------------- #
-# Generic HTTP-style errors
+# Универсальные ошибки в стиле HTTP
 # --------------------------------------------------------------------------- #
 class NotFoundError(AppError):
-    """Raised when a referenced entity cannot be found."""
+    """Возбуждается, когда упоминаемая сущность не может быть найдена."""
 
     status_code = 404
     default_message = "not found"
 
 
 class ValidationError(AppError):
-    """Raised for hand-rolled validation failures not covered by Pydantic."""
+    """Возбуждается при самописных ошибках валидации, не покрываемых Pydantic."""
 
     status_code = 422
     default_message = "validation error"
 
 
 class DatabaseError(AppError):
-    """Raised when a database operation fails.
+    """Возбуждается, когда операция с базой данных завершается неудачей.
 
-    The original exception is chained so it can be inspected by handlers
-    or debug tooling.
+    Исходное исключение цепляется, чтобы его могли просмотреть обработчики
+    или отладочные инструменты.
     """
 
     status_code = 502
     default_message = "database error"
 
     def __init__(self, message: str | None = None, *, cause: BaseException | None = None) -> None:
-        """Initialise the error.
+        """Инициализировать ошибку.
 
         Args:
-            message: Optional override for :attr:`default_message`.
-            cause: The underlying DB exception (re-raised via ``__cause__``).
+            message: Необязательное переопределение :attr:`default_message`.
+            cause: Исходное исключение БД (повторно возбуждается через ``__cause__``).
         """
         super().__init__(message)
         if cause is not None:

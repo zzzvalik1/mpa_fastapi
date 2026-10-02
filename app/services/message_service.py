@@ -1,4 +1,4 @@
-"""Message service (mirrors ``App/Controller/MessageController.php``)."""
+"""Сервис сообщений (порт ``App/Controller/MessageController.php``)."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from app.services.mailer_client import MailerClient
 
 
 class MessageService(BaseService):
-    """Handles shop-order requests and support-email submissions."""
+    """Обрабатывает заявки на заказ в магазине и отправку писем в support."""
 
     def __init__(
         self,
@@ -26,17 +26,17 @@ class MessageService(BaseService):
         mailer: MailerClient,
         client_ip: str = "",
     ) -> None:
-        """Initialise the service.
+        """Инициализирует сервис.
 
         Args:
-            customer_repo: Customer repository.
-            service_repo: Service repository (kept for API symmetry).
-            tariff_repo: Tariff repository (used to look up the ordered tariff).
-            fee_repo: Fee repository (unused here but kept for API symmetry).
-            lklog_repo: LK-log repository.
-            webclientlog_repo: Webclient-log repository.
-            mailer: Mailer client.
-            client_ip: IP of the calling client.
+            customer_repo: Репозиторий клиентов.
+            service_repo: Репозиторий услуг (сохранён для симметрии API).
+            tariff_repo: Репозиторий тарифов (используется для поиска заказанного тарифа).
+            fee_repo: Репозиторий платежей (не используется здесь, но сохранён для симметрии API).
+            lklog_repo: Репозиторий LK-логов.
+            webclientlog_repo: Репозиторий webclient-логов.
+            mailer: Mailer-клиент.
+            client_ip: IP вызывающего клиента.
         """
         super().__init__(
             customer_repo=customer_repo,
@@ -62,18 +62,18 @@ class MessageService(BaseService):
         email: str,
         comment: str,
     ) -> dict[str, Any]:
-        """Send a shop-order email to support.
+        """Отправляет в support email с заказом из магазина.
 
         Args:
-            uid: Authenticated user id (``None`` for anonymous requests).
-            good_id: Tariff id the user wants to order.
-            address: Customer address.
-            phone_number: Customer phone.
-            email: Customer email.
-            comment: Free-text comment.
+            uid: Идентификатор аутентифицированного пользователя (``None`` для анонимных запросов).
+            good_id: Идентификатор тарифа, который хочет заказать пользователь.
+            address: Адрес клиента.
+            phone_number: Телефон клиента.
+            email: Email клиента.
+            comment: Свободный комментарий.
 
         Returns:
-            A dict ready to be embedded in the response envelope.
+            Словарь, готовый к включению в конверт ответа.
         """
         tariff = self.tariff_repo.get_tariff_by_tid(good_id) or {}
         if uid is None:
@@ -143,16 +143,16 @@ class MessageService(BaseService):
         email: str,
         message: str,
     ) -> dict[str, Any]:
-        """Send a support email.
+        """Отправляет email в support.
 
         Args:
-            account: Subscriber PIN (or ``"не указан"``).
-            phone_number: Customer phone.
-            email: Customer email.
-            message: Message body.
+            account: PIN абонента (или ``"не указан"``).
+            phone_number: Телефон клиента.
+            email: Email клиента.
+            message: Тело сообщения.
 
         Returns:
-            A dict with ``success`` / ``message`` / ``code`` keys.
+            Словарь с ключами ``success`` / ``message`` / ``code``.
         """
         self.logger.debug('User of pin: %s get query "/support/send-email".', account)
 

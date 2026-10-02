@@ -1,4 +1,4 @@
-"""Subscriber endpoints (``GET /subscriber``, ``GET /resources/promised-pay-terms``)."""
+"""Эндпоинты подписчика (``GET /subscriber``, ``GET /resources/promised-pay-terms``)."""
 
 from __future__ import annotations
 
@@ -20,14 +20,14 @@ def get_subscriber(
     uid: CurrentUid,
     service: CustomerServiceDep,
 ) -> Envelope[dict]:
-    """Return the subscriber profile + active account summary.
+    """Вернуть профиль абонента + сводку активного аккаунта.
 
     Args:
-        uid: Authenticated user id.
-        service: Injected :class:`CustomerService`.
+        uid: id аутентифицированного пользователя.
+        service: Внедрённый :class:`CustomerService`.
 
     Returns:
-        An :class:`Envelope` whose ``data`` is the subscriber payload.
+        :class:`Envelope`, у которого ``data`` — полезная нагрузка абонента.
     """
     return Envelope(success=True, data=service.get_subscriber(uid), message="success", code=200)
 

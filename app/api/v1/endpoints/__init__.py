@@ -1,1 +1,1 @@
-"""API v1 endpoints package."""
+"""Пакет эндпоинтов API v1."""

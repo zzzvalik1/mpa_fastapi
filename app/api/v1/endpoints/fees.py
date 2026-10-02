@@ -1,4 +1,4 @@
-"""Fee endpoints (``POST .../transactions``)."""
+"""Эндпоинты платежей (``POST .../transactions``)."""
 
 from __future__ import annotations
 
@@ -23,16 +23,16 @@ def get_transactions(
     uid: CurrentUid,
     service: FeeServiceDep,
 ) -> Envelope[list]:
-    """Return the transaction history for the given account.
+    """Вернуть историю транзакций для указанного аккаунта.
 
     Args:
-        account_id: Path account id.
-        body: Optional date-range filter.
-        uid: Authenticated user id.
-        service: Injected :class:`FeeService`.
+        account_id: id аккаунта из пути.
+        body: Необязательный фильтр диапазона дат.
+        uid: id аутентифицированного пользователя.
+        service: Внедрённый :class:`FeeService`.
 
     Returns:
-        An :class:`Envelope` whose ``data`` is the transaction list.
+        :class:`Envelope`, у которого ``data`` — список транзакций.
     """
     transactions = service.get_transactions(
         uid, account_id, body.start_date, body.end_date

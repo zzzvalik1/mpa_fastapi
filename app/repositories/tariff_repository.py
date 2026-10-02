@@ -1,4 +1,4 @@
-"""Tariff repository (mirrors ``App/Service/Tariff.php``)."""
+"""Репозиторий тарифов (порт ``App/Service/Tariff.php``)."""
 
 from __future__ import annotations
 
@@ -8,13 +8,13 @@ from app.repositories.base import BaseRepository
 
 
 class TariffRepository(BaseRepository):
-    """Read / write access to the ``TARIF`` / ``BUNDLE`` / ``RESPROTO`` tables."""
+    """Чтение/запись таблиц ``TARIF`` / ``BUNDLE`` / ``RESPROTO``."""
 
     # ------------------------------------------------------------------ #
     # Lookups
     # ------------------------------------------------------------------ #
     def is_blocked_change_tariff(self, uid: int) -> int:
-        """Return ``1`` if the user is blocked from changing tariffs, ``0`` otherwise."""
+        """Вернуть ``1``, если пользователю запрещена смена тарифов, иначе ``0``."""
         sql = """
             SELECT `data`
             FROM `CUSTOMER_OPTIONS`
@@ -26,7 +26,7 @@ class TariffRepository(BaseRepository):
         return 1 if row else 0
 
     def find_tariff_without_realip(self, tid: int) -> int:
-        """Return the ``tid`` of the same tariff *without* ``[real]`` in the name."""
+        """Вернуть ``tid`` того же тарифа *без* ``[real]`` в названии."""
         sql = """
             SELECT `tid`
             FROM `TARIF`
@@ -38,7 +38,7 @@ class TariffRepository(BaseRepository):
         return int((row or {}).get("tid") or 0)
 
     def find_tariff_with_realip(self, tid: int) -> int:
-        """Return the ``tid`` of the same tariff *with* ``[real]`` in the name."""
+        """Вернуть ``tid`` того же тарифа *с* ``[real]`` в названии."""
         sql = """
             SELECT `tid`
             FROM `TARIF`
@@ -48,12 +48,12 @@ class TariffRepository(BaseRepository):
         return int((row or {}).get("tid") or 0)
 
     def get_tariff_by_tid(self, tid: int) -> dict[str, Any] | None:
-        """Return a single tariff row by ``tid``."""
+        """Вернуть одну строку тарифа по ``tid``."""
         sql = "SELECT * FROM TARIF WHERE `tid` = :tid"
         return self._fetchone(sql, {"tid": tid})
 
     def get_details_by_tid(self, tid: int) -> dict[str, Any] | None:
-        """Return the detailed tariff projection (coeff / schedule / ...)."""
+        """Вернуть детальную проекцию тарифа (коэффициент / расписание / ...)."""
         sql = """
             SELECT t.name            AS tariffName,
                    t.tid             AS tariffId,
@@ -75,7 +75,7 @@ class TariffRepository(BaseRepository):
         return self._fetchone(sql, {"tid": tid})
 
     def get_details_active_tarifs(self) -> list[dict[str, Any]]:
-        """Return all switch-able primary tariffs (for the tariff list endpoint)."""
+        """Вернуть все переключаемые основные тарифы (для эндпоинта списка тарифов)."""
         sql = """
             SELECT t.name           AS tariffName,
                    t.duration,
@@ -96,7 +96,7 @@ class TariffRepository(BaseRepository):
         return self._fetchall(sql)
 
     def get_private_switch_allowed_list(self) -> list[dict[str, Any]]:
-        """Return the lightweight list of tariffs allowed for self-switching."""
+        """Вернуть облегчённый список тарифов, разрешённых для самостоятельного переключения."""
         sql = """
             SELECT tid, name, abonent_fee
             FROM TARIF
@@ -112,15 +112,15 @@ class TariffRepository(BaseRepository):
         type_: int | None = None,
         sw_al: bool = False,
     ) -> list[dict[str, Any]]:
-        """Return the catalogue of additional-service tariffs.
+        """Вернуть каталог тарифов дополнительных услуг.
 
         Args:
-            tids: Optional list of tids to filter by.
-            type_: Optional ``TARIF.type`` value to filter by.
-            sw_al: When ``True`` only ``switch_allowed = 1`` rows are returned.
+            tids: Необязательный список tid для фильтрации.
+            type_: Необязательное значение ``TARIF.type`` для фильтрации.
+            sw_al: При ``True`` возвращаются только строки с ``switch_allowed = 1``.
 
         Returns:
-            A list of tariff dicts.
+            Список словарей тарифов.
         """
         where = ["1 = 1"]
         params: dict[str, Any] = {}
@@ -156,7 +156,7 @@ class TariffRepository(BaseRepository):
         return self._fetchall(sql, params)
 
     def is_tids_from_bundle(self, tid: int, tid_next: int) -> int:
-        """Return ``bundle.bid`` if both tids belong to the same bundle, else 0."""
+        """Вернуть ``bundle.bid``, если оба tid принадлежат одному bundle, иначе 0."""
         sql = """
             SELECT BUNDLE.bid
             FROM `TARIF`
@@ -169,7 +169,7 @@ class TariffRepository(BaseRepository):
         return int((row or {}).get("bid") or 0)
 
     def get_resproto(self, tid: int) -> list[dict[str, Any]]:
-        """Return the RESPROTO rows for the given tid (used by Smotreshka flows)."""
+        """Вернуть строки RESPROTO для данного tid (используется в потоках Smotreshka)."""
         sql = """
             SELECT RESPROTO.*
             FROM RESPROTO
@@ -179,7 +179,7 @@ class TariffRepository(BaseRepository):
         return self._fetchall(sql, {"tid": tid})
 
     def find_by_main_promo(self, tid: int) -> int:
-        """Return the tid of the promo's main tariff (0 if none)."""
+        """Вернуть tid основного тарифа промо (0, если нет)."""
         sql = """
             SELECT tid
             FROM TARIF
@@ -195,7 +195,7 @@ class TariffRepository(BaseRepository):
     # Writes
     # ------------------------------------------------------------------ #
     def set_tariff(self, sid: int, tid_next: int) -> bool:
-        """Schedule a tariff change for the next billing period."""
+        """Запланировать смену тарифа на следующий расчётный период."""
         sql = """
             UPDATE `SERVICE`
             SET `tid_next` = :tid_next
@@ -204,15 +204,15 @@ class TariffRepository(BaseRepository):
         return self._execute(sql, {"sid": sid, "tid_next": tid_next}) >= 0
 
     def set_tariff_now(self, sid_old: int, sid_cur: int, tid: int) -> bool:
-        """Apply a tariff change immediately (also recalculates cost).
+        """Применить смену тарифа немедленно (также пересчитывает стоимость).
 
         Args:
-            sid_old: Previous service id (gets its ``tid_next`` updated).
-            sid_cur: Current service id (gets both ``tid`` and ``tid_next`` updated).
-            tid: Target tariff id.
+            sid_old: id предыдущей услуги (обновляется ``tid_next``).
+            sid_cur: id текущей услуги (обновляются и ``tid``, и ``tid_next``).
+            tid: Целевой идентификатор тарифа.
 
         Returns:
-            ``True`` on success.
+            ``True`` при успехе.
         """
         self._execute(
             "UPDATE `SERVICE` SET tid_next = :tid WHERE `sid` = :sid_old",

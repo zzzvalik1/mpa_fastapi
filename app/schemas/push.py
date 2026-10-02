@@ -1,4 +1,4 @@
-"""Push-notification worker schemas."""
+"""Схемы push-воркеров."""
 
 from __future__ import annotations
 
@@ -6,10 +6,10 @@ from pydantic import BaseModel, Field
 
 
 class PushResult(BaseModel):
-    """Generic result payload returned by the push endpoints."""
+    """Универсальная полезная нагрузка результата, возвращаемая push-эндпоинтами."""
 
-    success: bool = Field(..., description="Operation success flag.")
-    message: str = Field(..., description="Short human-readable status.")
+    success: bool = Field(..., description="Флаг успешности операции.")
+    message: str = Field(..., description="Короткий человекочитаемый статус.")
 
 
 __all__ = ["PushResult"]

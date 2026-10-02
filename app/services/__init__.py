@@ -1,6 +1,7 @@
-"""Service layer (business logic).
+"""Слой сервисов (бизнес-логика).
 
-Services orchestrate multiple repositories and implement the domain rules
-that the original PHP ``App/Controller/Base.php`` kept in its ``precheck*``
-methods (freeze, block, promised pay, real-IP, ...).
+Сервисы оркестрируют несколько репозиториев и реализуют доменные правила,
+которые исходный PHP-класс ``App/Controller/Base.php`` хранил в своих
+методах ``precheck*`` (заморозка, блокировка, обещанный платёж,
+real-IP, ...).
 """

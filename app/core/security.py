@@ -1,15 +1,15 @@
-"""JWT security helpers.
+"""JWT-хелперы безопасности.
 
-This module reproduces the behaviour of the original PHP
+Этот модуль воспроизводит поведение исходных PHP-классов
 ``AuthMiddleware`` / ``AuthController``:
 
-* Tokens are signed with ``Settings.jwt_algorithm`` (HS-family) using
-  :data:`Settings.jwt_key`.
-* The ``jti`` claim is computed as ``sha1(uid + app_key + iat)`` — the same
-  formula as the PHP reference implementation — so tokens issued by either
-  implementation are interchangeable.
-* The ``iss`` claim must equal :data:`Settings.app_name`.
-* The ``sub`` claim carries the user's ``uid``.
+* Токены подписываются алгоритмом ``Settings.jwt_algorithm`` (семейство HS) с
+  использованием :data:`Settings.jwt_key`.
+* Claim ``jti`` вычисляется как ``sha1(uid + app_key + iat)`` — по той же
+  формуле, что и в эталонной PHP-реализации — поэтому токены, выпущенные
+  любой из реализаций, взаимозаменяемы.
+* Claim ``iss`` должен быть равен :data:`Settings.app_name`.
+* Claim ``sub`` несёт ``uid`` пользователя.
 """
 
 from __future__ import annotations
@@ -27,15 +27,15 @@ from app.core.config import Settings, settings as _settings
 
 @dataclass(frozen=True, slots=True)
 class DecodedToken:
-    """Lightweight, validated representation of a decoded JWT.
+    """Легковесное, провалидированное представление декодированного JWT.
 
     Attributes:
-        uid: The user identifier (``sub`` claim).
-        iat: ``issued at`` timestamp.
-        exp: ``expiration`` timestamp.
-        jti: JWT id (used for replay protection).
-        iss: Issuer.
-        raw: The original claims dict.
+        uid: Идентификатор пользователя (claim ``sub``).
+        iat: Метка времени ``issued at``.
+        exp: Метка времени ``expiration``.
+        jti: JWT id (используется для защиты от повторов).
+        iss: Издатель.
+        raw: Исходный словарь claims.
     """
 
     uid: int
@@ -47,17 +47,17 @@ class DecodedToken:
 
 
 def _compute_jti(uid: int, app_key: str, iat: int) -> str:
-    """Compute the ``jti`` claim.
+    """Вычислить claim ``jti``.
 
-    Replicates ``sha1(uid . app_key . iat)`` from the PHP implementation.
+    Воспроизводит ``sha1(uid . app_key . iat)`` из PHP-реализации.
 
     Args:
-        uid: User identifier (``sub`` claim).
-        app_key: Application secret (:data:`Settings.app_key`).
-        iat: ``issued at`` unix timestamp.
+        uid: Идентификатор пользователя (claim ``sub``).
+        app_key: Секрет приложения (:data:`Settings.app_key`).
+        iat: Unix-метка времени ``issued at``.
 
     Returns:
-        Hex-encoded SHA-1 digest (40 characters).
+        SHA-1-дайджест в шестнадцатеричной кодировке (40 символов).
     """
     payload = f"{uid}{app_key}{iat}".encode("utf-8")
     return hashlib.sha1(payload).hexdigest()
@@ -67,14 +67,14 @@ def encode_token(
     uid: int,
     settings: Settings = _settings,
 ) -> str:
-    """Issue a signed JWT for the given user id.
+    """Выпустить подписанный JWT для заданного id пользователя.
 
     Args:
-        uid: The user identifier to embed in the ``sub`` claim.
-        settings: Application settings (defaults to the global singleton).
+        uid: Идентификатор пользователя, который будет помещён в claim ``sub``.
+        settings: Настройки приложения (по умолчанию глобальный синглтон).
 
     Returns:
-        A compact JWT string.
+        Компактная строка JWT.
     """
     iat = int(datetime.now(timezone.utc).timestamp())
     jti = _compute_jti(uid, settings.app_key, iat)
@@ -83,7 +83,7 @@ def encode_token(
         "jti": jti,
         "iat": iat,
         "exp": iat + settings.jwt_lifetime,
-        # PyJWT (and RFC 7519) requires ``sub`` to be a string.
+        # PyJWT (и RFC 7519) требует, чтобы ``sub`` был строкой.
         "sub": str(uid),
     }
     return jwt.encode(payload, settings.jwt_key, algorithm=settings.jwt_algorithm)
@@ -93,25 +93,25 @@ def decode_token(
     token: str,
     settings: Settings = _settings,
 ) -> DecodedToken:
-    """Decode and validate a JWT.
+    """Декодировать и провалидировать JWT.
 
-    Validation rules:
+    Правила валидации:
 
-    * Signature must verify against :data:`Settings.jwt_key`.
-    * ``exp`` must be in the future (handled by PyJWT).
-    * ``iss`` must equal :data:`Settings.app_name`.
-    * ``jti`` must equal ``sha1(sub . app_key . iat)``.
+    * Подпись должна проверяться относительно :data:`Settings.jwt_key`.
+    * ``exp`` должен быть в будущем (обрабатывается PyJWT).
+    * ``iss`` должен быть равен :data:`Settings.app_name`.
+    * ``jti`` должен быть равен ``sha1(sub . app_key . iat)``.
 
     Args:
-        token: The raw JWT string (without the ``"Bearer "`` prefix).
-        settings: Application settings.
+        token: Сырая строка JWT (без префикса ``"Bearer "``).
+        settings: Настройки приложения.
 
     Returns:
-        A :class:`DecodedToken` with the validated claims.
+        :class:`DecodedToken` с провалидированными claims.
 
     Raises:
-        InvalidTokenError: If the token fails signature, expiry, issuer or
-            ``jti`` validation.
+        InvalidTokenError: Если токен не проходит проверку подписи, срока
+            действия, издателя или ``jti``.
     """
     try:
         claims: dict[str, Any] = jwt.decode(
@@ -147,16 +147,16 @@ def decode_token(
 
 
 def token_expires_at(uid: int, settings: Settings = _settings) -> datetime:
-    """Return the absolute expiry datetime for a token issued *now*.
+    """Вернуть абсолютное время истечения токена, выпущенного *сейчас*.
 
-    Convenience helper for callers that need to display the expiry.
+    Удобный хелпер для вызовающих, которым нужно показать время истечения.
 
     Args:
-        uid: User identifier.
-        settings: Application settings.
+        uid: Идентификатор пользователя.
+        settings: Настройки приложения.
 
     Returns:
-        Timezone-aware expiry datetime in UTC.
+        Время истечения с учётом часового пояса в UTC.
     """
     now = datetime.now(timezone.utc)
     return now + timedelta(seconds=settings.jwt_lifetime)

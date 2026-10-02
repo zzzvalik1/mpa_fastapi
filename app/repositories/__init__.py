@@ -1,7 +1,7 @@
-"""Repository classes.
+"""Классы репозиториев.
 
-Each repository wraps a single SQLAlchemy session and exposes typed methods
-that mirror the original PHP ``App/Service/*`` classes.  All SQL is written
-explicitly (no ORM models) to keep behaviour identical to the reference
-implementation.
+Каждый репозиторий оборачивает одну сессию SQLAlchemy и предоставляет
+типизированные методы, портированные из исходных PHP-классов
+``App/Service/*``.  Весь SQL написан явно (без ORM-моделей), чтобы
+поведение совпадало с эталонной реализацией.
 """

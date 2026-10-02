@@ -1,7 +1,7 @@
-"""Customer service (mirrors ``App/Controller/CustomerController.php``).
+"""Сервис клиентов (порт ``App/Controller/CustomerController.php``).
 
-Implements the subscriber / account / suspend / promised-pay / pay-link
-flows.  Uses :class:`BaseService` for the shared precheck algorithms.
+Реализует потоки subscriber / account / suspend / promised-pay /
+pay-link.  Использует :class:`BaseService` для общих алгоритмов предпроверок.
 """
 
 from __future__ import annotations
@@ -23,10 +23,10 @@ from app.services.base_service import BaseService, PromisedPayPrecheck
 
 
 class CustomerService(BaseService):
-    """High-level customer operations.
+    """Высокоуровневые операции с клиентами.
 
-    Inherits precheck helpers from :class:`BaseService` and adds the
-    concrete business methods that the API endpoints call.
+    Наследует методы предпроверок от :class:`BaseService` и добавляет
+    конкретные бизнес-методы, которые вызываются API-эндпоинтами.
     """
 
     # ------------------------------------------------------------------ #
@@ -34,7 +34,7 @@ class CustomerService(BaseService):
     # ------------------------------------------------------------------ #
     @staticmethod
     def _build_balance(user: dict[str, Any], precheck: PromisedPayPrecheck) -> dict[str, Any]:
-        """Build the ``balance`` block used by ``/subscriber`` responses."""
+        """Строит блок ``balance``, используемый ответами ``/subscriber``."""
         date_expire = user.get("date_expire")
         pay_until = None
         ended_at = None
@@ -62,7 +62,7 @@ class CustomerService(BaseService):
 
     @staticmethod
     def _split_name(name: str | None) -> tuple[str, str]:
-        """Return ``(last_name, first_name)`` from a ``"Last First"`` string."""
+        """Возвращает ``(last_name, first_name)`` из строки ``"Last First"``."""
         if not name:
             return "", ""
         parts = name.split(" ", 1)
@@ -71,13 +71,13 @@ class CustomerService(BaseService):
         return parts[0], parts[1]
 
     def _build_suspend_info(self, user: dict[str, Any]) -> tuple[bool, dict[str, Any]]:
-        """Return ``(suspend_allow, suspend_info)`` for an account row.
+        """Возвращает ``(suspend_allow, suspend_info)`` для строки аккаунта.
 
         Args:
-            user: The subscriber row.
+            user: Строка подписчика.
 
         Returns:
-            A 2-tuple with the allow flag and the suspend info dict.
+            Кортеж из 2 элементов: флаг разрешения и dict с suspend info.
         """
         suspend_info: dict[str, Any] = {}
         suspend_allow = True
@@ -104,16 +104,16 @@ class CustomerService(BaseService):
     # Public API
     # ------------------------------------------------------------------ #
     def get_subscriber(self, uid: int) -> dict[str, Any]:
-        """Return the subscriber payload for ``GET /api/v1/subscriber``.
+        """Возвращает профиль абонента для ``GET /api/v1/subscriber``.
 
         Args:
-            uid: User id.
+            uid: Идентификатор пользователя.
 
         Returns:
-            A dict ready to be embedded in the response envelope.
+            Словарь, готовый к включению в конверт ответа.
 
         Raises:
-            NotFoundError: If the subscriber cannot be found.
+            NotFoundError: Если подписчик не найден.
         """
         user = self.customer_repo.find_subscriber_by_uid(uid)
         if not user:
@@ -136,14 +136,14 @@ class CustomerService(BaseService):
         }
 
     def get_accounts(self, uid: int) -> list[dict[str, Any]]:
-        """Return the list of accounts for ``GET /subscriber/accounts``.
+        """Возвращает список аккаунтов для ``GET /subscriber/accounts``.
 
         Args:
-            uid: User id.
+            uid: Идентификатор пользователя.
 
         Returns:
-            A list with a single account dict (the original API returns one
-            account per subscriber).
+            Список с одним dict аккаунта (исходный API возвращает один
+            аккаунт на подписчика).
         """
         user = self.customer_repo.find_subscriber_by_uid(uid)
         if not user:
@@ -162,18 +162,18 @@ class CustomerService(BaseService):
         ]
 
     def get_account(self, uid: int, account_id: int) -> dict[str, Any]:
-        """Return a single account for ``GET /subscriber/accounts/{accountId}``.
+        """Возвращает один аккаунт для ``GET /subscriber/accounts/{accountId}``.
 
         Args:
-            uid: Authenticated user id.
-            account_id: Account id from the path.
+            uid: Идентификатор аутентифицированного пользователя.
+            account_id: Идентификатор аккаунта из пути.
 
         Returns:
-            Account dict.
+            Словарь аккаунта.
 
         Raises:
-            AuthorizationError: If ``account_id`` does not match ``uid``.
-            NotFoundError: If the user cannot be found.
+            AuthorizationError: Если ``account_id`` не совпадает с ``uid``.
+            NotFoundError: Если пользователь не найден.
         """
         user = self.customer_repo.find_subscriber_by_uid(uid)
         if not user:
@@ -208,21 +208,21 @@ class CustomerService(BaseService):
         date_start: str | None = None,
         date_end: str | None = None,
     ) -> dict[str, Any]:
-        """Apply a ``suspend`` / ``unsuspend`` / ``promised-pay`` action.
+        """Применить действие ``suspend`` / ``unsuspend`` / ``promised-pay``.
 
         Args:
-            uid: Authenticated user id.
-            account_id: Path account id.
-            action: Action name.
-            date_start: Optional freeze start (for ``suspend``).
-            date_end: Optional freeze end (for ``suspend``).
+            uid: Идентификатор аутентифицированного пользователя.
+            account_id: Идентификатор аккаунта из пути.
+            action: Имя действия.
+            date_start: Опциональное начало заморозки (для ``suspend``).
+            date_end: Опциональный конец заморозки (для ``suspend``).
 
         Returns:
-            A dict with ``success`` / ``message`` / ``code`` keys.
+            Словарь с ключами ``success`` / ``message`` / ``code``.
 
         Raises:
-            AuthorizationError: If the account id does not match.
-            CustomerError: If a precheck fails.
+            AuthorizationError: Если идентификатор аккаунта не совпадает.
+            CustomerError: Если предпроверка не пройдена.
         """
         user = self.customer_repo.find_subscriber_by_uid(uid)
         if not user:
@@ -257,7 +257,7 @@ class CustomerService(BaseService):
         date_start: str | None,
         date_end: str | None,
     ) -> dict[str, Any]:
-        """Execute a suspend (freeze or voluntary block) action."""
+        """Выполняет действие suspend (заморозка или добровольная блокировка)."""
         uid = int(user["uid"])
         duration = int(service.get("duration") or 0)
         if not date_start:
@@ -311,7 +311,7 @@ class CustomerService(BaseService):
         return {"success": False, "message": "block failed2", "code": 400}
 
     def _do_unsuspend(self, user: dict[str, Any], service: dict[str, Any]) -> dict[str, Any]:
-        """Execute an unsuspend (unfreeze / unblock) action."""
+        """Выполняет действие unsuspend (разморозка / разблокировка)."""
         uid = int(user["uid"])
         duration = int(service.get("duration") or 0)
 
@@ -377,7 +377,7 @@ class CustomerService(BaseService):
         return {"success": False, "message": "blocked is empty", "code": 400}
 
     def _do_promised_pay(self, user: dict[str, Any], service: dict[str, Any]) -> dict[str, Any]:
-        """Execute a promised-pay request."""
+        """Выполняет запрос обещанного платежа."""
         uid = int(user["uid"])
         precheck = self.precheck_oplatezh(uid)
         if precheck.opstatus != "available":
@@ -406,7 +406,7 @@ class CustomerService(BaseService):
     # Pay links
     # ------------------------------------------------------------------ #
     def get_pay_link(self, uid: int, amount: float) -> dict[str, Any]:
-        """Return the payment URL payload for ``GET /pay-link``."""
+        """Возвращает payload с URL платежа для ``GET /pay-link``."""
         user = self.customer_repo.find_subscriber_by_uid(uid)
         if not user:
             raise NotFoundError("incorrect username")
@@ -421,7 +421,7 @@ class CustomerService(BaseService):
         }
 
     def get_auto_pay_link(self, uid: int, amount: float) -> dict[str, Any]:
-        """Return the auto-payment URL payload for ``GET /auto-payment-link``."""
+        """Возвращает payload с URL автоплатежа для ``GET /auto-payment-link``."""
         user = self.customer_repo.find_subscriber_by_uid(uid)
         if not user:
             raise NotFoundError("incorrect username")
@@ -435,7 +435,7 @@ class CustomerService(BaseService):
         }
 
     def set_auto_pay_off(self, uid: int) -> dict[str, Any]:
-        """Disable the auto-payment binding for the user (``GET /auto-payment-off``)."""
+        """Отключает привязку автоплатежа для пользователя (``GET /auto-payment-off``)."""
         user = self.customer_repo.find_subscriber_by_uid(uid)
         if not user:
             raise NotFoundError("incorrect username")
@@ -452,7 +452,7 @@ class CustomerService(BaseService):
         }
 
     def promised_pay_terms(self, uid: int) -> str:
-        """Return the static HTML describing the promised-pay terms."""
+        """Возвращает статический HTML с описанием условий обещанного платежа."""
         user = self.customer_repo.find_subscriber_by_uid(uid)
         if not user:
             raise NotFoundError("incorrect username")

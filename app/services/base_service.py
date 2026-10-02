@@ -1,9 +1,10 @@
-"""Base service with shared business logic (the ``precheck*`` helpers).
+"""Базовый сервис с общей бизнес-логикой (методы ``precheck*``).
 
-This module is the Python equivalent of the original
-``App/Controller/Base.php`` abstract class.  It owns the freeze / block /
-promised-pay / real-IP precheck algorithms and exposes them as plain
-methods (no I/O of their own beyond what the repositories provide).
+Этот модуль — Python-эквивалент исходного абстрактного класса
+``App/Controller/Base.php``.  Он содержит алгоритмы предпроверок
+заморозки / блокировки / обещанного платежа / real-IP и предоставляет их
+в виде обычных методов (без собственного ввода-вывода, помимо того, что
+дают репозитории).
 """
 
 from __future__ import annotations
@@ -27,7 +28,7 @@ from app.repositories.webclientlog_repository import WebClientLogRepository
 # --------------------------------------------------------------------------- #
 @dataclass(frozen=True, slots=True)
 class PrecheckResult:
-    """Generic boolean precheck result with optional error/info text."""
+    """Универсальный результат булевой предпроверки с опциональным текстом ошибки/информации."""
 
     status: bool
     error: str | None = None
@@ -36,12 +37,12 @@ class PrecheckResult:
 
 @dataclass(frozen=True, slots=True)
 class PromisedPayPrecheck:
-    """Result of :meth:`BaseService.precheck_oplatezh`.
+    """Результат :meth:`BaseService.precheck_oplatezh`.
 
     Attributes:
-        sum: Recommended amount to pay (``None`` when N/A).
-        promised_until: Iso date until which the promise is honoured.
-        opstatus: One of ``available``, ``unavailable``, ``expired``, ``taken``.
+        sum: Рекомендуемая сумма платежа (``None``, если неприменимо).
+        promised_until: ISO-дата, до которой исполняется обещание.
+        opstatus: Одно из значений ``available``, ``unavailable``, ``expired``, ``taken``.
     """
 
     sum: float | None
@@ -54,21 +55,21 @@ class PromisedPayPrecheck:
 # --------------------------------------------------------------------------- #
 @dataclass
 class BaseService:
-    """Aggregate the six repositories + mailer and run precheck algorithms.
+    """Агрегирует шесть репозиториев + mailer и выполняет алгоритмы предпроверок.
 
-    Instances are created per-request by FastAPI dependencies (see
-    :mod:`app.api.v1.dependencies`).  All repository instances share the
-    same SQLAlchemy session (the main DB session); the LK / webclient
-    repositories receive their own sessions.
+    Экземпляры создаются на каждый запрос зависимостями FastAPI (см.
+    :mod:`app.api.v1.dependencies`).  Все экземпляры репозиториев используют
+    один и тот же SQLAlchemy-сеанс (основная БД); репозитории LK /
+    webclient получают собственные сеансы.
 
     Attributes:
-        customer_repo:  Customer repository (main DB).
-        service_repo:   Service repository (main DB).
-        tariff_repo:    Tariff repository (main DB).
-        fee_repo:       Fee repository (main DB).
-        lklog_repo:     LK-log repository (LK DB).
-        webclientlog_repo: Webclient-log repository (webclient DB).
-        client_ip:      IP address of the calling client (for audit logs).
+        customer_repo:  Репозиторий клиентов (основная БД).
+        service_repo:   Репозиторий услуг (основная БД).
+        tariff_repo:    Репозиторий тарифов (основная БД).
+        fee_repo:       Репозиторий платежей (основная БД).
+        lklog_repo:     Репозиторий LK-логов (LK БД).
+        webclientlog_repo: Репозиторий webclient-логов (webclient БД).
+        client_ip:      IP-адрес вызывающего клиента (для аудит-логов).
     """
 
     customer_repo: CustomerRepository
@@ -80,7 +81,7 @@ class BaseService:
     client_ip: str = ""
 
     def __post_init__(self) -> None:
-        """Initialise the logger field."""
+        """Инициализирует поле логгера."""
         self.logger = get_logger()
 
     # ------------------------------------------------------------------ #
@@ -94,17 +95,17 @@ class BaseService:
         before: Any = "",
         after: Any = "",
     ) -> int | None:
-        """Append a row to ``st_logs`` (LK audit log).
+        """Добавляет строку в ``st_logs`` (LK аудит-лог).
 
         Args:
-            user_id: Acting user id.
-            log_info: Short description.
-            type_: Type tag (e.g. ``tarifChange``).
-            before: Optional "before" state (any JSON-serialisable value).
-            after: Optional "after" state.
+            user_id: Идентификатор действующего пользователя.
+            log_info: Краткое описание.
+            type_: Тег типа (например ``tarifChange``).
+            before: Опциональное состояние «до» (любое JSON-сериализуемое значение).
+            after: Опциональное состояние «после».
 
         Returns:
-            New ``st_logs.Id``, or ``None`` if ``log_info`` is empty.
+            Новый ``st_logs.Id`` либо ``None``, если ``log_info`` пуст.
         """
         if not log_info:
             return None
@@ -127,17 +128,17 @@ class BaseService:
         before: Any = "",
         after: Any = "",
     ) -> int | None:
-        """Append a row to ``webclient_logs``.
+        """Добавляет строку в ``webclient_logs``.
 
         Args:
-            user_id: Acting user id.
-            log_info: Short description.
-            type_: Type tag.
-            before: Optional "before" state.
-            after: Optional "after" state.
+            user_id: Идентификатор действующего пользователя.
+            log_info: Краткое описание.
+            type_: Тег типа.
+            before: Опциональное состояние «до».
+            after: Опциональное состояние «после».
 
         Returns:
-            New ``webclient_logs.Id``, or ``None`` if ``log_info`` is empty.
+            Новый ``webclient_logs.Id`` либо ``None``, если ``log_info`` пуст.
         """
         if not log_info:
             return None
@@ -157,13 +158,13 @@ class BaseService:
     # ------------------------------------------------------------------ #
     @staticmethod
     def mb_speed(kbps: int | None) -> float:
-        """Convert a kbps value to Mbps using the original lookup table.
+        """Преобразует значение kbps в Mbps по исходной таблице соответствия.
 
         Args:
-            kbps: Speed in kbps (e.g. ``112640``).
+            kbps: Скорость в kbps (например ``112640``).
 
         Returns:
-            Speed in Mbps (rounded to 1 decimal place where appropriate).
+            Скорость в Mbps (округлённая до 1 знака после запятой там, где это уместно).
         """
         if kbps is None:
             return 100.0
@@ -176,13 +177,13 @@ class BaseService:
 
     @staticmethod
     def is_private_ip(ip: str) -> bool:
-        """Return ``True`` if ``ip`` is a private / loopback address.
+        """Возвращает ``True``, если ``ip`` — приватный / loopback-адрес.
 
         Args:
-            ip: IPv4 or IPv6 string.
+            ip: Строка IPv4 или IPv6.
 
         Returns:
-            ``True`` for private addresses.
+            ``True`` для приватных адресов.
         """
         if not ip:
             return False
@@ -195,7 +196,7 @@ class BaseService:
     # Tariff-change checks
     # ------------------------------------------------------------------ #
     def is_allow_change_tariff(self, uid: int) -> bool:
-        """Return ``True`` if the user is currently allowed to change tariff."""
+        """Возвращает ``True``, если пользователю сейчас разрешена смена тарифа."""
         service = self.service_repo.get_primary_service(uid)
         if not service:
             return False
@@ -208,7 +209,7 @@ class BaseService:
         return bool(no_change_ordered and not is_blocked and not is_bundle)
 
     def is_allow_realip_tariff(self, uid: int) -> bool:
-        """Return ``True`` if the user is allowed to switch *to* a real-IP tariff."""
+        """Возвращает ``True``, если пользователю разрешён переход *на* тариф с real-IP."""
         customer = self.customer_repo.find_customer_by_uid(uid)
         service = self.service_repo.get_primary_service(uid)
         if not customer or not service:
@@ -219,7 +220,7 @@ class BaseService:
         return (tid == tid_next) or (tid_next == without_realip)
 
     def is_allow_wo_realip_tariff(self, uid: int) -> bool:
-        """Return ``True`` if the user is allowed to switch *away* from a real-IP tariff."""
+        """Возвращает ``True``, если пользователю разрешён уход *с* тарифа с real-IP."""
         customer = self.customer_repo.find_customer_by_uid(uid)
         service = self.service_repo.get_primary_service(uid)
         if not customer or not service:
@@ -230,15 +231,15 @@ class BaseService:
         return (tid == tid_next) or (tid_next == with_realip)
 
     def get_real_ip_cost(self, tid: int, tid_next: int) -> float:
-        """Return the cost of adding/removing a real-IP on top of the tariff.
+        """Возвращает стоимость добавления/удаления real-IP поверх тарифа.
 
         Args:
-            tid: Current tariff id.
-            tid_next: Target tariff id.
+            tid: Идентификатор текущего тарифа.
+            tid_next: Идентификатор целевого тарифа.
 
         Returns:
-            ``0.0`` when the tariff is already real-IP or DC-named,
-            ``150.00`` otherwise.
+            ``0.0``, если тариф уже с real-IP или имеет DC-имя,
+            иначе ``150.00``.
         """
         tariff = self.tariff_repo.get_details_by_tid(tid) or {}
         tariff_next = self.tariff_repo.get_details_by_tid(tid_next) or {}
@@ -247,7 +248,7 @@ class BaseService:
         return 0.0 if (is_dc or tariff_with_real_ip) else 150.0
 
     def is_exist_in_active_service(self, uid: int, change_tid: int, service_id: int) -> bool:
-        """Return ``True`` if the given tid is part of the user's active services."""
+        """Возвращает ``True``, если указанный tid входит в активные услуги пользователя."""
         service = self.service_repo.get_primary_service(uid)
         if not service:
             return False
@@ -259,15 +260,15 @@ class BaseService:
     # Promised-pay precheck
     # ------------------------------------------------------------------ #
     def precheck_oplatezh(self, uid: int) -> PromisedPayPrecheck:
-        """Return the promised-pay availability summary for the user.
+        """Возвращает сводку доступности обещанного платежа для пользователя.
 
-        Algorithm ported verbatim from ``Base::precheckOplatezh``.
+        Алгоритм дословно портирован из ``Base::precheckOplatezh``.
 
         Args:
-            uid: Customer id.
+            uid: Идентификатор клиента.
 
         Returns:
-            A :class:`PromisedPayPrecheck` with the sum / until / status.
+            :class:`PromisedPayPrecheck` с суммой / датой «до» / статусом.
         """
         user = self.customer_repo.find_subscriber_by_uid(uid)
         service = self.service_repo.get_primary_service(uid)
@@ -335,13 +336,13 @@ class BaseService:
     FREEZE_DMAX: int = 90
 
     def _default_freeze_dates(self) -> tuple[str, str]:
-        """Return the default (start, end) date pair for a freeze."""
+        """Возвращает пару дат (начала, конца) по умолчанию для заморозки."""
         tomorrow = (date.today() + timedelta(days=1)).strftime("%Y-%m-%d")
         end = (date.today() + timedelta(days=1 + self.FREEZE_DMAX)).strftime("%Y-%m-%d")
         return tomorrow, end
 
     def _get_planning_costs(self, uid: int, date_start: str) -> float:
-        """Compute the projected cost of a freeze that starts after ``date_expire``."""
+        """Вычисляет projected-стоимость заморозки, начинающейся после ``date_expire``."""
         service = self.service_repo.get_primary_service(uid)
         if not service:
             return 0.0
@@ -387,15 +388,15 @@ class BaseService:
         date_start: str | None = None,
         date_end: str | None = None,
     ) -> PrecheckResult:
-        """Validate a voluntary block request.
+        """Проверяет запрос на добровольную блокировку.
 
         Args:
-            uid: Customer id.
-            date_start: Optional freeze start (YYYY-MM-DD).
-            date_end:   Optional freeze end   (YYYY-MM-DD).
+            uid: Идентификатор клиента.
+            date_start: Опциональное начало заморозки (YYYY-MM-DD).
+            date_end:   Опциональный конец заморозки (YYYY-MM-DD).
 
         Returns:
-            :class:`PrecheckResult` with ``status=True`` when allowed.
+            :class:`PrecheckResult` со ``status=True``, если разрешено.
         """
         if not date_start:
             date_start, _ = self._default_freeze_dates()
@@ -463,7 +464,7 @@ class BaseService:
         return PrecheckResult(True)
 
     def precheck_unblock(self, uid: int) -> bool:
-        """Return ``True`` if the user can be unblocked right now."""
+        """Возвращает ``True``, если пользователя можно разблокировать прямо сейчас."""
         service = self.service_repo.get_primary_service(uid)
         if not service:
             return False
@@ -482,7 +483,7 @@ class BaseService:
         date_start: str | None = None,
         date_end: str | None = None,
     ) -> PrecheckResult:
-        """Validate a freeze request (the "30-day" tariff flavour)."""
+        """Проверяет запрос на заморозку (вариант тарифа «на 30 дней»)."""
         if not date_start:
             date_start, _ = self._default_freeze_dates()
         if not date_end:
@@ -557,7 +558,7 @@ class BaseService:
         return PrecheckResult(True, info="Frozen is success")
 
     def precheck_unfreeze(self, uid: int) -> bool:
-        """Return ``True`` if the user can be unfrozen right now."""
+        """Возвращает ``True``, если пользователя можно разморозить прямо сейчас."""
         return self.customer_repo.allow_unfrozen_now(uid) > 0
 
 

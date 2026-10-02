@@ -1,4 +1,4 @@
-"""Fee / transaction schemas."""
+"""Схемы платежей / транзакций."""
 
 from __future__ import annotations
 
@@ -11,25 +11,25 @@ from app.schemas.common import Currency, RUB_CURRENCY
 
 
 class Transaction(BaseModel):
-    """Single transaction entry returned by ``POST .../transactions``."""
+    """Запись одной транзакции, возвращаемая ``POST .../transactions``."""
 
-    date: str = Field(..., description="ISO-8601 transaction date.")
-    debit: float = Field(..., description="Amount (positive = income, negative = expense).")
-    currency: Currency = Field(default=RUB_CURRENCY, description="Currency info.")
-    comment: str = Field(..., description="Human-readable comment.")
+    date: str = Field(..., description="Дата транзакции ISO-8601.")
+    debit: float = Field(..., description="Сумма (положительная = доход, отрицательная = расход).")
+    currency: Currency = Field(default=RUB_CURRENCY, description="Информация о валюте.")
+    comment: str = Field(..., description="Человекочитаемый комментарий.")
 
 
 class TransactionsRequest(BaseModel):
-    """Body of ``POST .../transactions``.
+    """Тело ``POST .../transactions``.
 
-    Both fields are optional — when omitted, the API returns the full history.
+    Оба поля необязательны — при отсутствии API возвращает полную историю.
     """
 
     start_date: str | None = Field(
-        default=None, description="Inclusive lower bound (ISO-8601)."
+        default=None, description="Включающая нижняя граница (ISO-8601)."
     )
     end_date: str | None = Field(
-        default=None, description="Inclusive upper bound (ISO-8601)."
+        default=None, description="Включающая верхняя граница (ISO-8601)."
     )
 
 

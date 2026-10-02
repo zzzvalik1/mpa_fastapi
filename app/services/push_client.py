@@ -1,6 +1,6 @@
-"""HTTP client for the external push-notification gateway.
+"""HTTP-клиент внешнего push-шлюза.
 
-Replaces the original PHP ``App/Helper/PushSend.php`` (cURL based).
+Заменяет исходный PHP-класс ``App/Helper/PushSend.php`` (на cURL).
 """
 
 from __future__ import annotations
@@ -16,12 +16,12 @@ from app.core.logging import get_logger
 
 @dataclass(frozen=True, slots=True)
 class PushResultData:
-    """Normalised result returned by :meth:`PushClient.send_push`.
+    """Нормализованный результат, возвращаемый :meth:`PushClient.send_push`.
 
     Attributes:
-        success: Whether the gateway reported success.
-        message: Status / error message.
-        data:    Parsed JSON payload (dict) when the response was JSON.
+        success: Успех по отчёту шлюза.
+        message: Статус / сообщение об ошибке.
+        data:    Разобранный JSON-payload (dict), если ответ был JSON.
     """
 
     success: bool
@@ -30,13 +30,13 @@ class PushResultData:
 
 
 class PushClient:
-    """Thin sync wrapper around the external push-notification HTTP gateway."""
+    """Тонкая sync-обвертка вокруг внешнего push-HTTP-шлюза."""
 
     def __init__(self, settings: Settings = _settings) -> None:
-        """Initialise the client.
+        """Инициализирует клиент.
 
         Args:
-            settings: Application settings (defaults to the global singleton).
+            settings: Настройки приложения (по умолчанию — глобальный singleton).
         """
         self._settings = settings
         self._logger = get_logger()
@@ -44,7 +44,7 @@ class PushClient:
         self._api_key = settings.push_key
 
     def _headers(self) -> dict[str, str]:
-        """Return the standard Bearer-auth + JSON headers."""
+        """Возвращает стандартные заголовки Bearer-auth + JSON."""
         return {
             "Authorization": f"Bearer {self._api_key}",
             "Content-Type": "application/json",
@@ -56,15 +56,15 @@ class PushClient:
         data: dict[str, Any] | None = None,
         method: str = "GET",
     ) -> PushResultData:
-        """Send a request to the push gateway.
+        """Отправляет запрос на push-шлюз.
 
         Args:
-            path: Path appended to :attr:`Settings.push_url` (must start with ``/``).
-            data: Optional JSON body (used for POST).
-            method: HTTP method (``"GET"`` or ``"POST"``).
+            path: Путь, добавляемый к :attr:`Settings.push_url` (должен начинаться с ``/``).
+            data: Опциональное JSON-тело (используется для POST).
+            method: HTTP-метод (``"GET"`` или ``"POST"``).
 
         Returns:
-            A :class:`PushResultData` with the parsed response.
+            :class:`PushResultData` с разобранным ответом.
         """
         url = f"{self._base_url}{path}"
         try:
@@ -98,13 +98,13 @@ class PushClient:
         return PushResultData(success=success, message=message, data=parsed)
 
     def get_auth_users(self, path: str = "/statistics/active-subscribers") -> list[int]:
-        """Return the list of currently authenticated subscriber uids.
+        """Возвращает список uid’ов текущих аутентифицированных абонентов.
 
         Args:
-            path: Endpoint path (default ``/statistics/active-subscribers``).
+            path: Путь эндпоинта (по умолчанию ``/statistics/active-subscribers``).
 
         Returns:
-            A list of integer uids (empty list on failure).
+            Список целых uid (пустой список при ошибке).
         """
         result = self.send_push(path, method="GET")
         if not result.success or not isinstance(result.data, dict):

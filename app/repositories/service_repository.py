@@ -1,4 +1,4 @@
-"""Service repository (mirrors ``App/Service/Service.php``)."""
+"""Репозиторий услуг (порт ``App/Service/Service.php``)."""
 
 from __future__ import annotations
 
@@ -8,19 +8,19 @@ from app.repositories.base import BaseRepository
 
 
 class ServiceRepository(BaseRepository):
-    """Read / write access to the ``SERVICE`` / ``RESOURCE`` tables."""
+    """Чтение/запись таблиц ``SERVICE`` / ``RESOURCE``."""
 
     # ------------------------------------------------------------------ #
     # Reads
     # ------------------------------------------------------------------ #
     def get_actual_services(self, uid: int) -> list[dict[str, Any]]:
-        """Return all active services (primary + additional) for the user.
+        """Вернуть все активные услуги (основные + дополнительные) для пользователя.
 
         Args:
-            uid: Customer id.
+            uid: Идентификатор клиента.
 
         Returns:
-            A list of dicts (one per service).  Empty list if none.
+            Список словарей (по одному на услугу).  Пустой список, если их нет.
         """
         sql = """
             SELECT
@@ -83,7 +83,7 @@ class ServiceRepository(BaseRepository):
         return self._fetchall(sql, {"uid": uid, "uid2": uid})
 
     def get_primary_service(self, uid: int) -> dict[str, Any] | None:
-        """Return the user's primary service (``parent_sid IS NULL``)."""
+        """Вернуть основную услугу пользователя (``parent_sid IS NULL``)."""
         sql = """
             SELECT *,
                    IF(t.duration IN (1,3,6), 'month',
@@ -98,17 +98,17 @@ class ServiceRepository(BaseRepository):
         return self._fetchone(sql, {"uid": uid})
 
     def get_services_by_uid(self, uid: int) -> list[dict[str, Any]]:
-        """Return every ``SERVICE`` row for the user (primary + child)."""
+        """Вернуть все строки ``SERVICE`` для пользователя (основные + дочерние)."""
         sql = "SELECT * FROM SERVICE WHERE `uid` = :uid"
         return self._fetchall(sql, {"uid": uid})
 
     def get_service_by_sid(self, sid: int) -> dict[str, Any] | None:
-        """Return a single ``SERVICE`` row by ``sid``."""
+        """Вернуть одну строку ``SERVICE`` по ``sid``."""
         sql = "SELECT * FROM SERVICE WHERE `sid` = :sid"
         return self._fetchone(sql, {"sid": sid})
 
     def get_current_period(self, uid: int) -> dict[str, Any] | None:
-        """Return the user's current billing period (start / end)."""
+        """Вернуть текущий расчётный период пользователя (начало / конец)."""
         sql = """
             SELECT DATE(`date_register`) AS dateStart, DATE(`date_expire`) AS dateEnd
             FROM SERVICE
@@ -119,7 +119,7 @@ class ServiceRepository(BaseRepository):
         return self._fetchone(sql, {"uid": uid})
 
     def get_parent_sid(self, uid: int, tid: int) -> int:
-        """Return the parent_sid (or sid) of the service holding the given tid."""
+        """Вернуть parent_sid (или sid) услуги, содержащей данный tid."""
         sql = """
             SELECT parent_sid, sid
             FROM SERVICE
@@ -133,7 +133,7 @@ class ServiceRepository(BaseRepository):
         return int(row.get("parent_sid") or row.get("sid") or 0)
 
     def get_day_accounting(self, uid: int) -> int:
-        """Return the ``day_accounting`` flag for the user's primary service."""
+        """Вернуть флаг ``day_accounting`` для основной услуги пользователя."""
         sql = """
             SELECT `day_accounting`
             FROM SERVICE
@@ -145,7 +145,7 @@ class ServiceRepository(BaseRepository):
         return int((row or {}).get("day_accounting") or 0)
 
     def get_sum_last_days(self, uid: int, tid: int) -> float:
-        """Return the proportional fee for the remaining days."""
+        """Вернуть пропорциональную плату за оставшиеся дни."""
         sql = """
             SELECT (t.abonent_fee / (TO_DAYS(s.date_expire) - TO_DAYS(s.date_register)))
                    * (TO_DAYS(s.date_expire) - TO_DAYS(NOW())) AS abonFee
@@ -160,7 +160,7 @@ class ServiceRepository(BaseRepository):
         return float((row or {}).get("abonFee") or 0.0)
 
     def is_set_service(self, uid: int, tid: int) -> int:
-        """Return the resource id if the user already has the given tid, else 0."""
+        """Вернуть id ресурса, если у пользователя уже есть данный tid, иначе 0."""
         sql = """
             SELECT rid
             FROM `RESOURCE`
@@ -175,7 +175,7 @@ class ServiceRepository(BaseRepository):
     # Writes
     # ------------------------------------------------------------------ #
     def update_service(self, sid: int, update_data: dict[str, Any]) -> bool:
-        """Update arbitrary columns on the ``SERVICE`` table by ``sid``."""
+        """Обновить произвольные столбцы в таблице ``SERVICE`` по ``sid``."""
         if not update_data:
             return False
         set_clause = ", ".join(f"`{c}` = :{c}" for c in update_data)
@@ -185,7 +185,7 @@ class ServiceRepository(BaseRepository):
         return self._execute(sql, params) >= 0
 
     def update_service_add(self, parent_sid: int, update_data: dict[str, Any]) -> bool:
-        """Update child services of the given parent ``sid``."""
+        """Обновить дочерние услуги с заданным родительским ``sid``."""
         if not update_data:
             return False
         set_clause = ", ".join(f"`{c}` = :{c}" for c in update_data)
@@ -195,7 +195,7 @@ class ServiceRepository(BaseRepository):
         return self._execute(sql, params) >= 0
 
     def update_resource(self, rid: int, update_data: dict[str, Any]) -> bool:
-        """Update arbitrary columns on the ``RESOURCE`` table by ``rid``."""
+        """Обновить произвольные столбцы в таблице ``RESOURCE`` по ``rid``."""
         if not update_data:
             return False
         set_clause = ", ".join(f"`{c}` = :{c}" for c in update_data)
@@ -205,7 +205,7 @@ class ServiceRepository(BaseRepository):
         return self._execute(sql, params) >= 0
 
     def unsubscribe(self, parent_sid: int, tid: int) -> bool:
-        """Schedule the given additional service for cancellation next period."""
+        """Запланировать отмену данной дополнительной услуги в следующем периоде."""
         sql = """
             UPDATE `SERVICE`
             SET `tid_next` = 1000, `prolong` = 0
@@ -214,12 +214,12 @@ class ServiceRepository(BaseRepository):
         return self._execute(sql, {"parent_sid": parent_sid, "tid": tid}) >= 0
 
     def delete_service(self, uid: int, sid: int) -> bool:
-        """Delete a service row."""
+        """Удалить строку услуги."""
         sql = "DELETE FROM `SERVICE` WHERE `sid` = :sid AND `uid` = :uid"
         return self._execute(sql, {"sid": sid, "uid": uid}) > 0
 
     def insert_service(self, insert_data: dict[str, Any]) -> int | None:
-        """Insert a new ``SERVICE`` row from a column → value map."""
+        """Вставить новую строку ``SERVICE`` из соответствия столбец → значение."""
         if not insert_data:
             return None
         cols = list(insert_data.keys())
@@ -230,7 +230,7 @@ class ServiceRepository(BaseRepository):
         return self._last_insert_id()
 
     def insert_resource(self, insert_data: dict[str, Any]) -> int | None:
-        """Insert a new ``RESOURCE`` row from a column → value map."""
+        """Вставить новую строку ``RESOURCE`` из соответствия столбец → значение."""
         if not insert_data:
             return None
         cols = list(insert_data.keys())

@@ -1,8 +1,8 @@
-"""Authentication service (login / logout).
+"""Сервис аутентификации (login / logout).
 
-Replaces ``App/Controller/AuthController.php``.  Password verification is
-done with :mod:`bcrypt` so that hashes produced by PHP's
-``password_hash(..., PASSWORD_DEFAULT)`` continue to validate.
+Заменяет ``App/Controller/AuthController.php``.  Проверка пароля выполняется
+через :mod:`bcrypt`, поэтому хеши, созданные PHP-функцией
+``password_hash(..., PASSWORD_DEFAULT)``, продолжают проходить проверку.
 """
 
 from __future__ import annotations
@@ -21,11 +21,11 @@ from app.repositories.customer_repository import CustomerRepository
 
 
 class AuthService:
-    """Encapsulates login / logout business logic.
+    """Инкапсулирует бизнес-логику login / logout.
 
     Attributes:
-        customer_repo: Customer repository (main DB).
-        settings: Application settings.
+        customer_repo: Репозиторий клиентов (основная БД).
+        settings: Настройки приложения.
     """
 
     def __init__(
@@ -33,11 +33,11 @@ class AuthService:
         customer_repo: CustomerRepository,
         settings: Settings = _settings,
     ) -> None:
-        """Initialise the service.
+        """Инициализирует сервис.
 
         Args:
-            customer_repo: Customer repository instance.
-            settings: Application settings (defaults to the global singleton).
+            customer_repo: Экземпляр репозитория клиентов.
+            settings: Настройки приложения (по умолчанию — глобальный singleton).
         """
         self.customer_repo = customer_repo
         self.settings = settings
@@ -48,17 +48,17 @@ class AuthService:
     # ------------------------------------------------------------------ #
     @staticmethod
     def _verify_password(plain: str, stored_hash: str | None) -> bool:
-        """Verify a plain-text password against a stored hash.
+        """Проверяет открытый пароль против сохранённого хеша.
 
-        Supports both PHP's ``password_hash`` (bcrypt, prefix ``$2y$``) and
-        Python's bcrypt (prefix ``$2b$``).  ``$2a$`` is also accepted.
+        Поддерживаются как PHP-функция ``password_hash`` (bcrypt, префикс ``$2y$``),
+        так и Python bcrypt (префикс ``$2b$``).  ``$2a$`` также принимается.
 
         Args:
-            plain: Plain-text password entered by the user.
-            stored_hash: Hash stored in the database (may be ``None``).
+            plain: Открытый пароль, введённый пользователем.
+            stored_hash: Хеш, сохранённый в БД (может быть ``None``).
 
         Returns:
-            ``True`` if the password matches.
+            ``True``, если пароль совпадает.
         """
         if not stored_hash:
             return False
@@ -75,19 +75,19 @@ class AuthService:
     # Public API
     # ------------------------------------------------------------------ #
     def login(self, username: str, password: str) -> dict[str, str]:
-        """Authenticate a subscriber and return a JWT token payload.
+        """Аутентифицирует абонента и возвращает payload с JWT-токеном.
 
         Args:
-            username: 6-digit PIN code.
-            password: Plain-text password.
+            username: 6-значный PIN-код.
+            password: Открытый пароль.
 
         Returns:
-            A dict ``{"id": <uid>, "jwt": <token>}``.
+            Словарь ``{"id": <uid>, "jwt": <token>}``.
 
         Raises:
-            IncorrectUsernameError: If ``username`` is not 6 characters long.
-            UserNotFoundError: If no customer matches the PIN.
-            InvalidCredentialsError: If the password does not verify.
+            IncorrectUsernameError: Если ``username`` не состоит из 6 символов.
+            UserNotFoundError: Если ни один клиент не соответствует PIN.
+            InvalidCredentialsError: Если пароль не прошёл проверку.
         """
         if len(username) != 6 or not username or not password:
             self.logger.error("Incorrect username. Username: %s.", username)
@@ -109,13 +109,13 @@ class AuthService:
         return {"id": str(uid), "jwt": token}
 
     def logout(self, uid: int) -> None:
-        """Validate that the user exists (the original API only logs the event).
+        """Проверяет, что пользователь существует (исходный API только пишет событие в лог).
 
         Args:
-            uid: User id extracted from the JWT.
+            uid: Идентификатор пользователя, извлечённый из JWT.
 
         Raises:
-            UserNotFoundError: If the user does not exist.
+            UserNotFoundError: Если пользователь не существует.
         """
         user = self.customer_repo.find_customer_by_uid(uid)
         if not user:

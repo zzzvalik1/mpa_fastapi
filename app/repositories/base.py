@@ -1,4 +1,4 @@
-"""Base repository with shared helpers."""
+"""Базовый репозиторий с общими хелперами."""
 
 from __future__ import annotations
 
@@ -12,19 +12,20 @@ from app.core.logging import get_logger
 
 
 class BaseRepository:
-    """Common functionality for every repository.
+    """Общая функциональность для всех репозиториев.
 
-    Subclasses receive a SQLAlchemy :class:`~sqlalchemy.orm.Session` (one of
-    the three connection pools) and use :meth:`_fetchall` / :meth:`_fetchone`
-    / :meth:`_execute` to run raw SQL.  Centralising the helpers here keeps
-    the SQL parameter style consistent (named parameters, ``:name``).
+    Подклассы получают :class:`~sqlalchemy.orm.Session` SQLAlchemy (одну из
+    трёх пулов соединений) и используют :meth:`_fetchall` / :meth:`_fetchone`
+    / :meth:`_execute` для выполнения сырого SQL.  Централизация хелперов
+    здесь сохраняет единый стиль параметров SQL (именованные параметры,
+    ``:name``).
     """
 
     def __init__(self, session: Session) -> None:
-        """Initialise the repository with a SQLAlchemy session.
+        """Инициализировать репозиторий сессией SQLAlchemy.
 
         Args:
-            session: A live :class:`Session` bound to one of the three engines.
+            session: Активная :class:`Session`, привязанная к одному из трёх движков.
         """
         self.session = session
         self.logger = get_logger()
@@ -33,18 +34,18 @@ class BaseRepository:
     # Internal helpers
     # ------------------------------------------------------------------ #
     def _fetchall(self, sql: str, params: dict[str, Any] | None = None) -> list[dict[str, Any]]:
-        """Run a SELECT and return all rows as dicts.
+        """Выполнить SELECT и вернуть все строки как словари.
 
         Args:
-            sql: Raw SQL statement (use ``:param`` placeholders).
-            params: Optional dict of bound parameters.
+            sql: Сырая SQL-инструкция (используйте плейсхолдеры ``:param``).
+            params: Необязательный словарь связанных параметров.
 
         Returns:
-            A list of dicts (one per row).  Returns an empty list when no
-            rows are found.
+            Список словарей (по одному на строку).  Возвращает пустой список,
+            если строки не найдены.
 
         Raises:
-            DatabaseError: If the underlying statement fails.
+            DatabaseError: Если выполнение инструкции завершилось ошибкой.
         """
         try:
             result = self.session.execute(text(sql), params or {})
@@ -54,17 +55,18 @@ class BaseRepository:
             raise DatabaseError("database query failed", cause=exc) from exc
 
     def _fetchone(self, sql: str, params: dict[str, Any] | None = None) -> dict[str, Any] | None:
-        """Run a SELECT and return a single row as a dict (or ``None``).
+        """Выполнить SELECT и вернуть одну строку как словарь (или ``None``).
 
         Args:
-            sql: Raw SQL statement.
-            params: Optional dict of bound parameters.
+            sql: Сырая SQL-инструкция.
+            params: Необязательный словарь связанных параметров.
 
         Returns:
-            A dict representing the first row, or ``None`` if no rows match.
+            Словарь, представляющий первую строку, или ``None``, если строки
+            не найдены.
 
         Raises:
-            DatabaseError: If the underlying statement fails.
+            DatabaseError: Если выполнение инструкции завершилось ошибкой.
         """
         try:
             result = self.session.execute(text(sql), params or {})
@@ -75,17 +77,17 @@ class BaseRepository:
             raise DatabaseError("database query failed", cause=exc) from exc
 
     def _execute(self, sql: str, params: dict[str, Any] | None = None) -> int:
-        """Run an INSERT / UPDATE / DELETE and return the affected row count.
+        """Выполнить INSERT / UPDATE / DELETE и вернуть количество затронутых строк.
 
         Args:
-            sql: Raw SQL statement.
-            params: Optional dict of bound parameters.
+            sql: Сырая SQL-инструкция.
+            params: Необязательный словарь связанных параметров.
 
         Returns:
-            The number of rows affected by the statement.
+            Количество строк, затронутых инструкцией.
 
         Raises:
-            DatabaseError: If the underlying statement fails.
+            DatabaseError: Если выполнение инструкции завершилось ошибкой.
         """
         try:
             result = self.session.execute(text(sql), params or {})
@@ -95,10 +97,10 @@ class BaseRepository:
             raise DatabaseError("database statement failed", cause=exc) from exc
 
     def _last_insert_id(self) -> int | None:
-        """Return the last auto-increment id inserted on this session.
+        """Вернуть последний auto-increment ID, вставленный в этой сессии.
 
         Returns:
-            The new id, or ``None`` if no INSERT has been executed yet.
+            Новый id или ``None``, если INSERT ещё не выполнялся.
         """
         try:
             row = self.session.execute(text("SELECT LAST_INSERT_ID() AS id")).fetchone()

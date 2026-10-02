@@ -1,9 +1,9 @@
-"""Shared pytest fixtures.
+"""Общие pytest-фикстуры.
 
-The tests import the FastAPI app via :mod:`app.main` and use
-:class:`httpx.Client` (sync) with the ``base_url`` parameter.  Database
-access is mocked at the repository level by monkey-patching the
-``BaseRepository._fetchall`` / ``_fetchone`` / ``_execute`` helpers.
+Тесты импортируют FastAPI-приложение через :mod:`app.main` и используют
+:class:`httpx.Client` (синхронный) с параметром ``base_url``.  Доступ к БД
+мокируется на уровне репозиториев путём monkey-patching хелперов
+``BaseRepository._fetchall`` / ``_fetchone`` / ``_execute``.
 """
 
 from __future__ import annotations
@@ -17,13 +17,13 @@ from fastapi.testclient import TestClient
 
 @pytest.fixture(scope="session")
 def app_client() -> Iterator[TestClient]:
-    """Return a :class:`TestClient` bound to the FastAPI app.
+    """Вернуть :class:`TestClient`, привязанный к FastAPI-приложению.
 
     Yields:
-        A :class:`TestClient` instance.  The client is closed automatically
-        at the end of the session.
+        Экземпляр :class:`TestClient`.  Клиент автоматически закрывается
+        в конце сессии.
     """
-    # Ensure the test process uses sane defaults even without a .env file.
+    # Гарантируем, что тестовый процесс использует разумные значения по умолчанию даже без .env.
     os.environ.setdefault("APP_KEY", "test-app-key")
     os.environ.setdefault("JWT_KEY", "test-jwt-key")
     os.environ.setdefault("JWT_ALGORITHM", "HS256")
@@ -34,7 +34,7 @@ def app_client() -> Iterator[TestClient]:
     os.environ.setdefault("MAIL_URL", "http://localhost/mail")
     os.environ.setdefault("PUSH_URL", "http://localhost/push")
 
-    # Import after env is set so Settings loads the test values.
+    # Импорт после установки переменных окружения, чтобы Settings загрузила тестовые значения.
     from app.main import create_app
 
     client = TestClient(create_app())

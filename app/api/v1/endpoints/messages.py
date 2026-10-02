@@ -1,4 +1,4 @@
-"""Message endpoints (``POST /subscriber/shop``, ``POST /support/send-email``)."""
+"""Эндпоинты сообщений (``POST /subscriber/shop``, ``POST /support/send-email``)."""
 
 from __future__ import annotations
 
@@ -22,18 +22,18 @@ def message_auth(
     uid: OptionalUid,
     service: MessageServiceDep,
 ) -> Envelope:
-    """Send a shop-order email to support.
+    """Отправить заявку из магазина в поддержку.
 
-    The endpoint accepts both authenticated (JWT present) and anonymous
-    requests; the helper uses the appropriate email template in each case.
+    Эндпоинт принимает как аутентифицированные (с JWT), так и анонимные
+    запросы; хелпер использует соответствующий email-шаблон в каждом случае.
 
     Args:
-        body: Shop-request payload.
-        uid: Optional authenticated user id.
-        service: Injected :class:`MessageService`.
+        body: Полезная нагрузка shop-запроса.
+        uid: Необязательный id аутентифицированного пользователя.
+        service: Внедрённый :class:`MessageService`.
 
     Returns:
-        An :class:`Envelope` whose ``data`` contains the email body preview.
+        :class:`Envelope`, у которого ``data`` содержит предпросмотр тела письма.
     """
     result = service.message_auth(
         uid,
@@ -61,14 +61,14 @@ def send_support_email(
     body: SupportEmailRequest,
     service: MessageServiceDep,
 ) -> Envelope:
-    """Send a support email.
+    """Отправить письмо в тех. поддержку.
 
     Args:
-        body: Support-email payload.
-        service: Injected :class:`MessageService`.
+        body: Полезная нагрузка support-email.
+        service: Внедрённый :class:`MessageService`.
 
     Returns:
-        An :class:`Envelope` describing the outcome.
+        :class:`Envelope`, описывающий результат.
     """
     result = service.send_support_email(
         account=body.account,

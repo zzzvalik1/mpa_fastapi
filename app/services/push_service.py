@@ -1,15 +1,15 @@
-"""Push service (mirrors ``App/Controller/PushController.php``).
+"""Сервис push-уведомлений (порт ``App/Controller/PushController.php``).
 
-The push endpoints are cron-style workers:
+Push-эндпоинты — cron-стильные worker’ы:
 
-* ``GET /notifications/send``       — flush waiting push messages.
-* ``GET /notifications/status``      — refresh status of recent pushes.
-* ``GET /notifications/status-old``  — refresh status of long-pending pushes.
+* ``GET /notifications/send``       — флюш ожидающих push-сообщений.
+* ``GET /notifications/status``      — обновление статуса недавних push-сообщений.
+* ``GET /notifications/status-old``  — обновление статуса долго ожидающих push-сообщений.
 
-The original PHP implementation used ``shell_exec`` + ``ps`` to enforce
-single-flight; here we use a process-wide :class:`threading.Lock` which is
-sufficient inside a single-process uvicorn worker (the recommended
-deployment mode for these endpoints).
+Исходная PHP-реализация использовала ``shell_exec`` + ``ps`` для
+single-flight; здесь мы используем process-wide :class:`threading.Lock`, чего
+достаточно внутри однопроцессного worker’а uvicorn (рекомендуемый
+режим деплоя для этих эндпоинтов).
 """
 
 from __future__ import annotations
@@ -24,14 +24,14 @@ from app.services.push_client import PushClient
 
 
 class PushService:
-    """Worker service for the push-notification endpoints."""
+    """Сервис-обработчик для push-эндпоинтов."""
 
     def __init__(self, push_repo: PushRepository, push_client: PushClient) -> None:
-        """Initialise the service.
+        """Инициализирует сервис.
 
         Args:
-            push_repo: Push repository (main DB).
-            push_client: Push HTTP client.
+            push_repo: Push-репозиторий (основная БД).
+            push_client: Push HTTP-клиент.
         """
         self.push_repo = push_repo
         self.push_client = push_client
@@ -45,10 +45,10 @@ class PushService:
     # GET /notifications/send
     # ------------------------------------------------------------------ #
     def send_messages(self) -> dict[str, Any]:
-        """Send all waiting push messages.
+        """Отправляет все ожидающие push-сообщения.
 
         Returns:
-            A dict with ``success`` / ``message`` / ``code`` keys.
+            Словарь с ключами ``success`` / ``message`` / ``code``.
         """
         if not self._send_lock.acquire(blocking=False):
             self.logger.error("== /notifications/send already running — skipping. ==")
@@ -105,7 +105,7 @@ class PushService:
     # GET /notifications/status
     # ------------------------------------------------------------------ #
     def status_messages(self) -> dict[str, Any]:
-        """Refresh the status of recently-sent push messages."""
+        """Обновляет статус недавно отправленных push-сообщений."""
         if not self._status_lock.acquire(blocking=False):
             self.logger.error("== /notifications/status already running — skipping. ==")
             return {"success": True, "message": "already running", "code": 200}
@@ -148,7 +148,7 @@ class PushService:
     # GET /notifications/status-old
     # ------------------------------------------------------------------ #
     def status_messages_old(self) -> dict[str, Any]:
-        """Refresh the status of long-pending push messages (retry 15..19)."""
+        """Обновляет статус долго ожидающих push-сообщений (retry 15..19)."""
         if not self._status_old_lock.acquire(blocking=False):
             self.logger.error("== /notifications/status-old already running — skipping. ==")
             return {"success": True, "message": "already running", "code": 200}

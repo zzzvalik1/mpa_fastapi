@@ -1,4 +1,4 @@
-"""CORS middleware factory."""
+"""Фабрика CORS-middleware."""
 
 from __future__ import annotations
 
@@ -7,16 +7,16 @@ from fastapi.middleware.cors import CORSMiddleware
 
 
 def install_cors(app: FastAPI) -> None:
-    """Register permissive CORS middleware on the given app.
+    """Зарегистрировать пермиссивный CORS-middleware в данном приложении.
 
-    Mirrors the original PHP ``App/Cors.php`` configuration:
+    Зеркалирует исходную PHP-конфигурацию ``App/Cors.php``:
 
     * ``Access-Control-Allow-Origin: *``
     * allowed headers: ``X-Requested-With, Content-Type, Accept, Origin, Authorization``
     * allowed methods: ``GET, POST, PUT, DELETE, PATCH, OPTIONS``
 
     Args:
-        app: The FastAPI application instance.
+        app: Экземпляр FastAPI-приложения.
     """
     app.add_middleware(
         CORSMiddleware,

@@ -1,13 +1,13 @@
-"""FastAPI dependencies shared by the v1 endpoints.
+"""FastAPI-зависимости, общие для v1 эндпоинтов.
 
-Three categories are exposed:
+Доступны три категории:
 
-* **Auth dependencies** — ``current_uid`` (required JWT) and ``optional_uid``
-  (best-effort JWT, used by ``/subscriber/shop``).
-* **Service factories** — FastAPI ``Depends`` callables that build the
-  per-request service objects (``AuthService``, ``CustomerService``, ...).
-* **Request context** — ``client_ip`` dependency that extracts the caller IP
-  for audit logging.
+* **Auth-зависимости** — ``current_uid`` (обязательный JWT) и ``optional_uid``
+  (best-effort JWT, используется ``/subscriber/shop``).
+* **Фабрики сервисов** — FastAPI-вызовы ``Depends``, создающие объекты
+  сервисов на каждый запрос (``AuthService``, ``CustomerService``, ...).
+* **Контекст запроса** — зависимость ``client_ip``, извлекающая IP
+  вызывающей стороны для аудит-логирования.
 """
 
 from __future__ import annotations
@@ -49,16 +49,16 @@ DbLkSession = Annotated[Session, Depends(get_db_lk)]
 # Client IP
 # --------------------------------------------------------------------------- #
 def client_ip(request: Request) -> str:
-    """Return the IP address of the calling client.
+    """Вернуть IP-адрес вызывающего клиента.
 
-    Honours the ``X-Forwarded-For`` header (first hop) when present so the
-    audit log shows the real client IP behind a reverse proxy.
+    Учитывает заголовок ``X-Forwarded-For`` (первый хоп), если он присутствует,
+    чтобы аудит-лог отображал реальный IP клиента за обратным прокси.
 
     Args:
-        request: The incoming Starlette :class:`Request`.
+        request: Входящий Starlette-запрос :class:`Request`.
 
     Returns:
-        The client IP as a string.
+        IP-адрес клиента в виде строки.
     """
     forwarded = request.headers.get("x-forwarded-for")
     if forwarded:
@@ -73,16 +73,16 @@ ClientIp = Annotated[str, Depends(client_ip)]
 # Auth dependencies
 # --------------------------------------------------------------------------- #
 def _extract_bearer(authorization: str | None) -> str:
-    """Return the raw token from an ``Authorization: Bearer <token>`` header.
+    """Вернуть сырой токен из заголовка ``Authorization: Bearer <token>``.
 
     Args:
-        authorization: The raw header value (may be ``None``).
+        authorization: Сырое значение заголовка (может быть ``None``).
 
     Returns:
-        The token string.
+        Строка токена.
 
     Raises:
-        AppInvalidTokenError: If the header is missing or malformed.
+        AppInvalidTokenError: Если заголовок отсутствует или некорректен.
     """
     if not authorization:
         raise AppInvalidTokenError("missing Authorization header")
@@ -95,16 +95,16 @@ def _extract_bearer(authorization: str | None) -> str:
 
 
 def current_uid(authorization: Annotated[str | None, Header()] = None) -> int:
-    """Return the authenticated user's id (required JWT).
+    """Вернуть id аутентифицированного пользователя (обязательный JWT).
 
     Args:
-        authorization: The ``Authorization`` header.
+        authorization: Заголовок ``Authorization``.
 
     Returns:
-        The user id (``uid``).
+        id пользователя (``uid``).
 
     Raises:
-        AppInvalidTokenError: If the token is missing / invalid / expired.
+        AppInvalidTokenError: Если токен отсутствует / недействителен / истёк.
     """
     token = _extract_bearer(authorization)
     decoded = decode_token(token)
@@ -112,16 +112,16 @@ def current_uid(authorization: Annotated[str | None, Header()] = None) -> int:
 
 
 def optional_uid(authorization: Annotated[str | None, Header()] = None) -> int | None:
-    """Return the authenticated user's id, or ``None`` if no token is present.
+    """Вернуть id аутентифицированного пользователя или ``None``, если токена нет.
 
-    Used by endpoints that accept both authenticated and anonymous requests
-    (e.g. ``POST /subscriber/shop``).
+    Используется эндпоинтами, которые принимают как аутентифицированные, так и
+    анонимные запросы (например, ``POST /subscriber/shop``).
 
     Args:
-        authorization: The ``Authorization`` header (optional).
+        authorization: Заголовок ``Authorization`` (необязательный).
 
     Returns:
-        The user id, or ``None``.
+        id пользователя или ``None``.
     """
     if not authorization:
         return None
@@ -139,13 +139,13 @@ OptionalUid = Annotated[int | None, Depends(optional_uid)]
 # Service factories
 # --------------------------------------------------------------------------- #
 def auth_service(db: DbSession) -> AuthService:
-    """Build an :class:`AuthService` for the current request.
+    """Создать :class:`AuthService` для текущего запроса.
 
     Args:
-        db: Main-DB session.
+        db: Сессия основной БД.
 
     Returns:
-        A new :class:`AuthService` instance.
+        Новый экземпляр :class:`AuthService`.
     """
     return AuthService(customer_repo=CustomerRepository(db))
 
@@ -156,16 +156,16 @@ def customer_service(
     db_lk: DbLkSession,
     ip: ClientIp,
 ) -> CustomerService:
-    """Build a :class:`CustomerService` for the current request.
+    """Создать :class:`CustomerService` для текущего запроса.
 
     Args:
-        db: Main-DB session.
-        db_client: Webclient-log DB session.
-        db_lk: LK-log DB session.
-        ip: Caller IP.
+        db: Сессия основной БД.
+        db_client: Сессия БД логов webclient.
+        db_lk: Сессия БД логов LK.
+        ip: IP вызывающей стороны.
 
     Returns:
-        A new :class:`CustomerService` instance.
+        Новый экземпляр :class:`CustomerService`.
     """
     return CustomerService(
         customer_repo=CustomerRepository(db),
@@ -184,7 +184,7 @@ def service_service(
     db_lk: DbLkSession,
     ip: ClientIp,
 ) -> ServiceService:
-    """Build a :class:`ServiceService` for the current request."""
+    """Создать :class:`ServiceService` для текущего запроса."""
     return ServiceService(
         customer_repo=CustomerRepository(db),
         service_repo=ServiceRepository(db),
@@ -203,7 +203,7 @@ def tariff_service(
     db_lk: DbLkSession,
     ip: ClientIp,
 ) -> TariffService:
-    """Build a :class:`TariffService` for the current request."""
+    """Создать :class:`TariffService` для текущего запроса."""
     return TariffService(
         customer_repo=CustomerRepository(db),
         service_repo=ServiceRepository(db),
@@ -221,7 +221,7 @@ def fee_service(
     db_lk: DbLkSession,
     ip: ClientIp,
 ) -> FeeService:
-    """Build a :class:`FeeService` for the current request."""
+    """Создать :class:`FeeService` для текущего запроса."""
     return FeeService(
         customer_repo=CustomerRepository(db),
         service_repo=ServiceRepository(db),
@@ -239,7 +239,7 @@ def message_service(
     db_lk: DbLkSession,
     ip: ClientIp,
 ) -> MessageService:
-    """Build a :class:`MessageService` for the current request."""
+    """Создать :class:`MessageService` для текущего запроса."""
     return MessageService(
         customer_repo=CustomerRepository(db),
         service_repo=ServiceRepository(db),
@@ -253,11 +253,11 @@ def message_service(
 
 
 def push_service(db: DbSession) -> PushService:
-    """Build a :class:`PushService` for the current request."""
+    """Создать :class:`PushService` для текущего запроса."""
     return PushService(push_repo=PushRepository(db), push_client=PushClient())
 
 
-# Re-exported Annotated aliases for ergonomic endpoint signatures.
+# Реэкспортируемые Annotated-алиасы для эргономичных сигнатур эндпоинтов.
 AuthServiceDep = Annotated[AuthService, Depends(auth_service)]
 CustomerServiceDep = Annotated[CustomerService, Depends(customer_service)]
 ServiceServiceDep = Annotated[ServiceService, Depends(service_service)]

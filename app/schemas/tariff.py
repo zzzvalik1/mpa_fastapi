@@ -1,4 +1,4 @@
-"""Tariff schemas."""
+"""Схемы тарифов."""
 
 from __future__ import annotations
 
@@ -8,20 +8,20 @@ from app.schemas.common import Currency, RUB_CURRENCY
 
 
 class TariffPrice(BaseModel):
-    """Price block for a tariff entry."""
+    """Блок цены для записи тарифа."""
 
-    total: float = Field(..., description="Monthly fee.")
-    currency: Currency = Field(default=RUB_CURRENCY, description="Currency info.")
-    frequency: str = Field(..., description="Billing frequency.")
+    total: float = Field(..., description="Ежемесячная плата.")
+    currency: Currency = Field(default=RUB_CURRENCY, description="Информация о валюте.")
+    frequency: str = Field(..., description="Частота биллинга.")
 
 
 class Tariff(BaseModel):
-    """Tariff entry returned by ``GET .../tariffs``."""
+    """Запись тарифа, возвращаемая ``GET .../tariffs``."""
 
-    id: int = Field(..., description="Tariff id (tid).")
-    title: str = Field(..., description="Tariff name.")
-    price: TariffPrice = Field(..., description="Price block.")
-    started_at: str | None = Field(default=None, description="Activation date (ISO).")
+    id: int = Field(..., description="Идентификатор тарифа (tid).")
+    title: str = Field(..., description="Название тарифа.")
+    price: TariffPrice = Field(..., description="Блок цены.")
+    started_at: str | None = Field(default=None, description="Дата активации (ISO).")
 
 
 __all__ = ["TariffPrice", "Tariff"]

@@ -1,6 +1,6 @@
-"""Push repository (mirrors ``App/Service/Push.php``).
+"""Репозиторий push (порт ``App/Service/Push.php``).
 
-The push workflow writes to ``PUSH_MESSAGES_MLK`` in the *main* database.
+Поток push записывает в ``PUSH_MESSAGES_MLK`` в *основной* базе данных.
 """
 
 from __future__ import annotations
@@ -11,10 +11,10 @@ from app.repositories.base import BaseRepository
 
 
 class PushRepository(BaseRepository):
-    """Read / write access to the ``PUSH_MESSAGES_MLK`` table."""
+    """Чтение/запись таблицы ``PUSH_MESSAGES_MLK``."""
 
     def get_wait_messages(self) -> list[dict[str, Any]]:
-        """Return all messages waiting to be sent (status = 'sended')."""
+        """Вернуть все сообщения, ожидающие отправки (status = 'sended')."""
         sql = """
             SELECT *
             FROM `PUSH_MESSAGES_MLK`
@@ -24,7 +24,7 @@ class PushRepository(BaseRepository):
         return self._fetchall(sql)
 
     def get_status_messages(self) -> list[dict[str, Any]]:
-        """Return messages whose status is still pending (max 15 retries)."""
+        """Вернуть сообщения, статус которых ещё в ожидании (максимум 15 попыток)."""
         sql = """
             SELECT `push_id`, `mlk_id`, `status`, `count_status`, `created_time`
             FROM `PUSH_MESSAGES_MLK`
@@ -37,7 +37,7 @@ class PushRepository(BaseRepository):
         return self._fetchall(sql)
 
     def get_status_messages_old(self) -> list[dict[str, Any]]:
-        """Return old messages still pending (retry count 15..19)."""
+        """Вернуть старые сообщения, ещё в ожидании (количество попыток 15..19)."""
         sql = """
             SELECT `push_id`, `mlk_id`, `status`, `count_status`, `created_time`
             FROM `PUSH_MESSAGES_MLK`
@@ -51,7 +51,7 @@ class PushRepository(BaseRepository):
         return self._fetchall(sql)
 
     def update_message(self, push_id: int, update_data: dict[str, Any]) -> bool:
-        """Update one or more columns on ``PUSH_MESSAGES_MLK`` by ``push_id``."""
+        """Обновить один или несколько столбцов в ``PUSH_MESSAGES_MLK`` по ``push_id``."""
         if not update_data:
             return False
         set_clause = ", ".join(f"`{c}` = :{c}" for c in update_data)

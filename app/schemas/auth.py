@@ -1,4 +1,4 @@
-"""Auth-related request / response schemas."""
+"""Схемы запросов / ответов для аутентификации."""
 
 from __future__ import annotations
 
@@ -6,28 +6,28 @@ from pydantic import BaseModel, Field
 
 
 class LoginRequest(BaseModel):
-    """Body of ``POST /api/v1/auth/token``.
+    """Тело ``POST /api/v1/auth/token``.
 
     Attributes:
-        username: 6-digit PIN code (validated by length).
-        password: Plain-text password (verified against bcrypt hash).
+        username: 6-значный PIN-код (проверяется по длине).
+        password: Пароль в открытом виде (проверяется против bcrypt-хеша).
     """
 
     username: str = Field(
-        ..., min_length=6, max_length=6, description="6-digit subscriber PIN code."
+        ..., min_length=6, max_length=6, description="6-значный PIN-код подписчика."
     )
-    password: str = Field(..., min_length=1, description="Subscriber password.")
+    password: str = Field(..., min_length=1, description="Пароль подписчика.")
 
 
 class LoginData(BaseModel):
-    """Payload returned on successful login."""
+    """Полезная нагрузка, возвращаемая при успешном входе."""
 
-    id: str = Field(..., description="User id (stringified, per the original API).")
-    jwt: str = Field(..., description="Signed JWT token.")
+    id: str = Field(..., description="Идентификатор пользователя (строковый, согласно оригинальному API).")
+    jwt: str = Field(..., description="Подписанный JWT-токен.")
 
 
 class LogoutResponse(BaseModel):
-    """Empty marker returned on logout — only the envelope matters."""
+    """Пустой маркер, возвращаемый при выходе — важен только конверт."""
 
     pass
 

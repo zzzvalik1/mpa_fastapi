@@ -1,6 +1,7 @@
-"""Common, reusable response schemas.
+"""Общие переиспользуемые схемы ответов.
 
-The mobile application expects every endpoint to return the same envelope::
+Мобильное приложение ожидает, что каждый эндпоинт возвращает один и тот же
+конверт::
 
     {
         "success": true|false,
@@ -9,9 +10,9 @@ The mobile application expects every endpoint to return the same envelope::
         "data": <payload>
     }
 
-The :class:`Envelope` generic below models this contract and is used as the
-default ``response_model`` for every endpoint.  Specialised schemas (in this
-package) describe the shape of ``data``.
+Дженерик :class:`Envelope` ниже моделирует этот контракт и используется как
+``response_model`` по умолчанию для каждого эндпоинта.  Специализированные
+схемы (в этом пакете) описывают структуру ``data``.
 """
 
 from __future__ import annotations
@@ -25,41 +26,41 @@ T = TypeVar("T")
 
 
 class Envelope(BaseModel, Generic[T]):
-    """Canonical API response envelope.
+    """Канонический конверт ответа API.
 
     Attributes:
-        success: ``True`` for successful responses, ``False`` for errors.
-        message: Short human-readable status text.
-        code: HTTP-style status code (mirrors the real HTTP status).
-        data: Optional payload; type is parameterised.
+        success: ``True`` для успешных ответов, ``False`` для ошибок.
+        message: Короткий человекочитаемый текст статуса.
+        code: Код статуса в стиле HTTP (зеркалирует реальный HTTP-статус).
+        data: Необязательная полезная нагрузка; тип параметризован.
     """
 
     model_config = ConfigDict(populate_by_name=True, extra="allow")
 
-    success: bool = Field(..., description="Operation success flag.")
-    message: str = Field("success", description="Short human-readable status.")
-    code: int = Field(200, ge=100, le=599, description="HTTP-style status code.")
-    data: T | None = Field(default=None, description="Optional payload.")
+    success: bool = Field(..., description="Флаг успешности операции.")
+    message: str = Field("success", description="Короткий человекочитаемый статус.")
+    code: int = Field(200, ge=100, le=599, description="Код статуса в стиле HTTP.")
+    data: T | None = Field(default=None, description="Необязательная полезная нагрузка.")
 
 
 class Currency(BaseModel):
-    """Currency metadata embedded in balance / price objects."""
+    """Метаданные валюты, встраиваемые в объекты баланса / цены."""
 
-    id: int = Field(..., description="Internal currency id.")
-    code: str = Field(..., description="ISO-4217 currency code, e.g. ``RUB``.")
-    title: str = Field(..., description="Human-readable currency title.")
+    id: int = Field(..., description="Внутренний идентификатор валюты.")
+    code: str = Field(..., description="Код валюты ISO-4217, например ``RUB``.")
+    title: str = Field(..., description="Человекочитаемое название валюты.")
 
 
-#: Pre-shared currency instance for RUB.
+#: Предзаготовленный экземпляр валюты для RUB.
 RUB_CURRENCY: Currency = Currency(id=1044, code="RUB", title="Руб")
 
 
 class ErrorEnvelope(BaseModel):
-    """Canonical error envelope (used by exception handlers)."""
+    """Канонический конверт ошибки (используется обработчиками исключений)."""
 
-    success: bool = Field(False, description="Always ``false`` for errors.")
-    message: str = Field(..., description="Error message.")
-    code: int = Field(..., description="HTTP status code.")
+    success: bool = Field(False, description="Всегда ``false`` для ошибок.")
+    message: str = Field(..., description="Сообщение об ошибке.")
+    code: int = Field(..., description="HTTP-код статуса.")
 
 
 __all__ = ["Envelope", "Currency", "RUB_CURRENCY", "ErrorEnvelope"]

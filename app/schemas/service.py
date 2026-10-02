@@ -1,4 +1,4 @@
-"""Service / additional-service schemas."""
+"""Схемы услуг и дополнительных услуг."""
 
 from __future__ import annotations
 
@@ -10,104 +10,104 @@ from app.schemas.common import Currency, RUB_CURRENCY
 
 
 class ServiceState(BaseModel):
-    """Status block embedded in every service object."""
+    """Блок статуса, встраиваемый в каждый объект услуги."""
 
-    id: int = Field(..., description="Numeric status id (1 = unlock, 2 = lock, ...).")
-    code: Literal["unlock", "lock"] = Field(..., description="Human-readable code.")
-    title: str = Field(..., description="Localised status title.")
-    paused: bool = Field(..., description="Whether the service is paused.")
+    id: int = Field(..., description="Числовой идентификатор статуса (1 = unlock, 2 = lock, ...).")
+    code: Literal["unlock", "lock"] = Field(..., description="Человекочитаемый код.")
+    title: str = Field(..., description="Локализованное название статуса.")
+    paused: bool = Field(..., description="Приостановлена ли услуга.")
 
 
 class Price(BaseModel):
-    """Price block shared by services, additional services and tariffs."""
+    """Блок цены, общий для услуг, дополнительных услуг и тарифов."""
 
-    total: float = Field(..., description="Amount in the local currency.")
-    currency: Currency = Field(default=RUB_CURRENCY, description="Currency info.")
-    frequency: str = Field(..., description="Billing frequency, e.g. ``month`` / ``daytime``.")
+    total: float = Field(..., description="Сумма в локальной валюте.")
+    currency: Currency = Field(default=RUB_CURRENCY, description="Информация о валюте.")
+    frequency: str = Field(..., description="Частота биллинга, например ``month`` / ``daytime``.")
 
 
 class ServiceInfo(BaseModel):
-    """Optional descriptive info block (e.g. speed)."""
+    """Необязательный описательный блок информации (например, скорость)."""
 
-    type: str = Field(..., description="Info type, e.g. ``speed`` or ``description``.")
-    title: str = Field(..., description="Title shown to the user.")
-    description: str | None = Field(default=None, description="Description text.")
+    type: str = Field(..., description="Тип информации, например ``speed`` или ``description``.")
+    title: str = Field(..., description="Заголовок, отображаемый пользователю.")
+    description: str | None = Field(default=None, description="Текст описания.")
 
 
 class AdditionalService(BaseModel):
-    """Additional (child) service entry."""
+    """Запись дополнительной (дочерней) услуги."""
 
-    id: int = Field(..., description="Service id (sid).")
-    title: str = Field(..., description="Service title.")
-    description: str | None = Field(default=None, description="Service description.")
-    pay_until: str | None = Field(default=None, description="Payment deadline (ISO).")
-    ended_at: str | None = Field(default=None, description="Service end date.")
-    info: ServiceInfo | None = Field(default=None, description="Optional info block.")
-    type: str | None = Field(default=None, description="Service type slug.")
-    type_add_service: str | None = Field(default=None, description="``auto`` or ``manual``.")
-    price: Price = Field(..., description="Price block.")
-    state: ServiceState = Field(..., description="State block.")
-    mutations: list[str] = Field(default_factory=list, description="Allowed mutations.")
+    id: int = Field(..., description="Идентификатор услуги (sid).")
+    title: str = Field(..., description="Название услуги.")
+    description: str | None = Field(default=None, description="Описание услуги.")
+    pay_until: str | None = Field(default=None, description="Крайний срок оплаты (ISO).")
+    ended_at: str | None = Field(default=None, description="Дата окончания услуги.")
+    info: ServiceInfo | None = Field(default=None, description="Необязательный блок информации.")
+    type: str | None = Field(default=None, description="Идентификатор типа услуги (slug).")
+    type_add_service: str | None = Field(default=None, description="``auto`` или ``manual``.")
+    price: Price = Field(..., description="Блок цены.")
+    state: ServiceState = Field(..., description="Блок состояния.")
+    mutations: list[str] = Field(default_factory=list, description="Разрешённые мутации.")
 
 
 class NextService(BaseModel):
-    """Scheduled (next) service entry, shown when a tariff change is pending."""
+    """Запись запланированной (следующей) услуги, отображаемая при ожидаемой смене тарифа."""
 
-    id: int = Field(..., description="Service id (sid).")
-    title: str = Field(..., description="Tariff name.")
-    info: ServiceInfo | None = Field(default=None, description="Info block.")
-    description: str | None = Field(default=None, description="Tariff type description.")
-    started_at: str | None = Field(default=None, description="Activation date.")
-    price: Price = Field(..., description="Price block.")
-    state: ServiceState = Field(..., description="State block.")
-    address: str = Field("", description="Service address.")
-    mutations: list[str] = Field(default_factory=list, description="Allowed mutations.")
+    id: int = Field(..., description="Идентификатор услуги (sid).")
+    title: str = Field(..., description="Название тарифа.")
+    info: ServiceInfo | None = Field(default=None, description="Блок информации.")
+    description: str | None = Field(default=None, description="Описание типа тарифа.")
+    started_at: str | None = Field(default=None, description="Дата активации.")
+    price: Price = Field(..., description="Блок цены.")
+    state: ServiceState = Field(..., description="Блок состояния.")
+    address: str = Field("", description="Адрес услуги.")
+    mutations: list[str] = Field(default_factory=list, description="Разрешённые мутации.")
 
 
 class Service(BaseModel):
-    """Primary service entry returned by ``GET .../services``."""
+    """Основная запись услуги, возвращаемая ``GET .../services``."""
 
-    id: int = Field(..., description="Service id (sid).")
-    title: str = Field(..., description="Tariff name.")
-    info: ServiceInfo | None = Field(default=None, description="Info block.")
-    description: str | None = Field(default=None, description="Tariff type description.")
-    pay_until: str | None = Field(default=None, description="Payment deadline.")
-    type: str | None = Field(default=None, description="Service type slug.")
-    price: Price = Field(..., description="Price block.")
-    state: ServiceState = Field(..., description="State block.")
+    id: int = Field(..., description="Идентификатор услуги (sid).")
+    title: str = Field(..., description="Название тарифа.")
+    info: ServiceInfo | None = Field(default=None, description="Блок информации.")
+    description: str | None = Field(default=None, description="Описание типа тарифа.")
+    pay_until: str | None = Field(default=None, description="Крайний срок оплаты.")
+    type: str | None = Field(default=None, description="Идентификатор типа услуги (slug).")
+    price: Price = Field(..., description="Блок цены.")
+    state: ServiceState = Field(..., description="Блок состояния.")
     next: NextService | list[NextService] | None = Field(
-        default=None, description="Scheduled next service(s)."
+        default=None, description="Запланированная следующая услуга(и)."
     )
-    address: str = Field("", description="Service address.")
+    address: str = Field("", description="Адрес услуги.")
     additional_services: list[AdditionalService] = Field(
-        default_factory=list, description="Active additional services."
+        default_factory=list, description="Активные дополнительные услуги."
     )
-    mutations: list[str] = Field(default_factory=list, description="Allowed mutations.")
+    mutations: list[str] = Field(default_factory=list, description="Разрешённые мутации.")
 
 
 class ChangeServiceRequest(BaseModel):
-    """Body of ``PATCH .../services/{serviceId}``.
+    """Тело ``PATCH .../services/{serviceId}``.
 
     Attributes:
-        action: One of ``change-tariff``, ``suspend``, ``unsuspend``.
-        tariffId: Required when ``action == "change-tariff"``.
-        date_start: Required when ``action == "suspend"``.
-        date_end: Required when ``action == "suspend"``.
+        action: Одно из значений: ``change-tariff``, ``suspend``, ``unsuspend``.
+        tariffId: Обязательно, когда ``action == "change-tariff"``.
+        date_start: Обязательно, когда ``action == "suspend"``.
+        date_end: Обязательно, когда ``action == "suspend"``.
     """
 
     action: Literal["change-tariff", "suspend", "unsuspend"]
-    tariffId: int | None = Field(default=None, description="Target tariff id.")
-    date_start: str | None = Field(default=None, description="Freeze start date.")
-    date_end: str | None = Field(default=None, description="Freeze end date.")
+    tariffId: int | None = Field(default=None, description="Идентификатор целевого тарифа.")
+    date_start: str | None = Field(default=None, description="Дата начала заморозки.")
+    date_end: str | None = Field(default=None, description="Дата окончания заморозки.")
 
 
 class ChangeAddServiceRequest(BaseModel):
-    """Body of ``PATCH .../additional-services/{AdditionalServiceId}``.
+    """Тело ``PATCH .../additional-services/{AdditionalServiceId}``.
 
-    ``action`` is an integer in the original API (0 = unsubscribe, 1 = subscribe).
+    ``action`` — целое число в оригинальном API (0 = отписка, 1 = подписка).
     """
 
-    action: Literal[0, 1] = Field(..., description="0 = unsubscribe, 1 = subscribe.")
+    action: Literal[0, 1] = Field(..., description="0 = отписка, 1 = подписка.")
 
 
 __all__ = [

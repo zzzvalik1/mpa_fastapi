@@ -1,7 +1,7 @@
-"""Aggregator for every v1 endpoint router.
+"""Агрегатор всех роутеров v1 эндпоинтов.
 
-The single :data:`api_router` returned by this module is mounted under
-``/api/v1`` by :mod:`app.main`.
+Единый :data:`api_router`, возвращаемый этим модулем, монтируется под
+``/api/v1`` модулем :mod:`app.main`.
 """
 
 from __future__ import annotations

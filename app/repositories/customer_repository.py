@@ -1,8 +1,8 @@
-"""Customer repository (mirrors ``App/Service/Customer.php``).
+"""Репозиторий клиентов (порт ``App/Service/Customer.php``).
 
-Every method is a 1:1 port of the original SQL queries, retyped to return
-plain Python dicts (instead of PHP ``stdClass`` objects).  ``None`` is used
-wherever the original returned an empty ``stdClass``.
+Каждый метод — прямой порт исходных SQL-запросов, типизированный для
+возврата обычных Python-словарей (вместо PHP-объектов ``stdClass``).
+``None`` используется там, где оригинал возвращал пустой ``stdClass``.
 """
 
 from __future__ import annotations
@@ -14,19 +14,19 @@ from app.repositories.base import BaseRepository
 
 
 class CustomerRepository(BaseRepository):
-    """Read / write access to the ``CUSTOMER`` and related tables."""
+    """Чтение/запись таблиц ``CUSTOMER`` и связанных."""
 
     # ------------------------------------------------------------------ #
     # Lookups
     # ------------------------------------------------------------------ #
     def find_customer_by_pin(self, pin: str) -> dict[str, Any] | None:
-        """Return a single customer matching the 6-digit PIN.
+        """Вернуть одного клиента по 6-значному PIN.
 
         Args:
-            pin: 6-digit PIN code.
+            pin: 6-значный PIN-код.
 
         Returns:
-            Customer row as a dict, or ``None`` if not found.
+            Строка клиента как словарь или ``None``, если не найден.
         """
         sql = """
             SELECT *
@@ -38,13 +38,13 @@ class CustomerRepository(BaseRepository):
         return self._fetchone(sql, {"pin": pin})
 
     def find_customer_by_uid(self, uid: int) -> dict[str, Any] | None:
-        """Return a single customer by ``uid`` with concatenated address / phones.
+        """Вернуть одного клиента по ``uid`` со склеенными адресом / телефонами.
 
         Args:
-            uid: Customer unique id.
+            uid: Уникальный идентификатор клиента.
 
         Returns:
-            Customer row as a dict, or ``None`` if not found.
+            Строка клиента как словарь или ``None``, если не найден.
         """
         sql = """
             SELECT *,
@@ -58,14 +58,14 @@ class CustomerRepository(BaseRepository):
         return self._fetchone(sql, {"uid": uid})
 
     def find_subscriber_by_uid(self, uid: int) -> dict[str, Any] | None:
-        """Return the rich subscriber projection used by most endpoints.
+        """Вернуть расширенную проекцию абонента, используемую большинством эндпоинтов.
 
         Args:
-            uid: Customer unique id.
+            uid: Уникальный идентификатор клиента.
 
         Returns:
-            A dict with subscriber + service + tariff + promised-pay info,
-            or ``None`` if the subscriber does not exist.
+            Словарь с данными абонента + услуги + тарифа + обещанного платежа
+            или ``None``, если абонент не существует.
         """
         sql = """
             SELECT c.uid,
@@ -122,13 +122,13 @@ class CustomerRepository(BaseRepository):
     # Promised pay
     # ------------------------------------------------------------------ #
     def find_op_by_uid(self, uid: int) -> dict[str, Any] | None:
-        """Return the active (unpaid) promised-pay row, if any.
+        """Вернуть активную (неоплаченную) строку обещанного платежа, если есть.
 
         Args:
-            uid: Customer unique id.
+            uid: Уникальный идентификатор клиента.
 
         Returns:
-            ``OPLATEZH`` row as a dict, or ``None``.
+            Строка ``OPLATEZH`` как словарь или ``None``.
         """
         sql = """
             SELECT *
@@ -139,13 +139,13 @@ class CustomerRepository(BaseRepository):
         return self._fetchone(sql, {"uid": uid})
 
     def find_opq_by_sid(self, sid: int) -> dict[str, Any] | None:
-        """Return a pending promised-pay request (``OPLATEZHQ``).
+        """Вернуть ожидающий запрос обещанного платежа (``OPLATEZHQ``).
 
         Args:
-            sid: Service id.
+            sid: Идентификатор услуги.
 
         Returns:
-            ``OPLATEZHQ`` row as a dict, or ``None``.
+            Строка ``OPLATEZHQ`` как словарь или ``None``.
         """
         sql = """
             SELECT *
@@ -163,18 +163,18 @@ class CustomerRepository(BaseRepository):
         subtype: int,
         average_pay: float,
     ) -> int | None:
-        """Insert a new promised-pay request.
+        """Вставить новый запрос обещанного платежа.
 
         Args:
-            uid: Customer id.
-            sid: Service id.
-            date_expire: Current service expiry date.
-            promised_pay: Promised amount.
-            subtype: Tariff subtype.
-            average_pay: Average historical payment.
+            uid: Идентификатор клиента.
+            sid: Идентификатор услуги.
+            date_expire: Текущая дата истечения услуги.
+            promised_pay: Обещанная сумма.
+            subtype: Подтип тарифа.
+            average_pay: Средний исторический платёж.
 
         Returns:
-            The new ``OPLATEZHQ`` row id, or ``None`` on failure.
+            id новой строки ``OPLATEZHQ`` или ``None`` при неудаче.
         """
         sql = """
             INSERT INTO `OPLATEZHQ` (`uid`, `sid`, `de`, `abon`, `subtype`, `srplatezh`)
@@ -194,13 +194,13 @@ class CustomerRepository(BaseRepository):
         return self._last_insert_id()
 
     def get_average_pay(self, uid: int) -> float:
-        """Return the average positive payment over the last 6 months.
+        """Вернуть средний положительный платёж за последние 6 месяцев.
 
         Args:
-            uid: Customer id.
+            uid: Идентификатор клиента.
 
         Returns:
-            The average payment (0 if no data).
+            Средний платёж (0, если данных нет).
         """
         sql = """
             SELECT SUM(sum_paid) / 1 AS sum_paid
@@ -217,13 +217,13 @@ class CustomerRepository(BaseRepository):
     # Recurrent (auto) payments
     # ------------------------------------------------------------------ #
     def get_recurrent_pay(self, uid: int) -> dict[str, Any] | None:
-        """Return the active RSB recurrent-payment binding, if any.
+        """Вернуть активную привязку рекуррентного платежа RSB, если есть.
 
         Args:
-            uid: Customer id.
+            uid: Идентификатор клиента.
 
         Returns:
-            ``RECURRENT_PAYS`` row as a dict, or ``None``.
+            Строка ``RECURRENT_PAYS`` как словарь или ``None``.
         """
         sql = """
             SELECT *
@@ -235,13 +235,13 @@ class CustomerRepository(BaseRepository):
         return self._fetchone(sql, {"uid": uid})
 
     def delete_recurrent_pay(self, uid: int) -> bool:
-        """Delete the RSB recurrent-payment binding for the user.
+        """Удалить привязку рекуррентного платежа RSB для пользователя.
 
         Args:
-            uid: Customer id.
+            uid: Идентификатор клиента.
 
         Returns:
-            ``True`` if at least one row was deleted.
+            ``True``, если удалена хотя бы одна строка.
         """
         sql = """
             DELETE FROM `RECURRENT_PAYS`
@@ -256,15 +256,15 @@ class CustomerRepository(BaseRepository):
     def exist_freeze_current_rp(
         self, uid: int, start: str | None, end: str | None
     ) -> int:
-        """Count freeze records in the current billing period.
+        """Посчитать записи о заморозке в текущем расчётном периоде.
 
         Args:
-            uid: Customer id.
-            start: Period start (YYYY-MM-DD).
-            end: Period end (YYYY-MM-DD).
+            uid: Идентификатор клиента.
+            start: Начало периода (YYYY-MM-DD).
+            end: Конец периода (YYYY-MM-DD).
 
         Returns:
-            The number of matching freeze records.
+            Количество соответствующих записей о заморозке.
         """
         sql = """
             SELECT COUNT(`id`) AS count
@@ -281,15 +281,15 @@ class CustomerRepository(BaseRepository):
     def disallow_freeze_current_rp(
         self, uid: int, start: str | None, end: str | None
     ) -> int:
-        """Count freeze records that overlap the period in a disallowed way.
+        """Посчитать записи о заморозке, запрещённо перекрывающие период.
 
         Args:
-            uid: Customer id.
-            start: Period start.
-            end: Period end.
+            uid: Идентификатор клиента.
+            start: Начало периода.
+            end: Конец периода.
 
         Returns:
-            The number of disallowed freeze records.
+            Количество запрещённых записей о заморозке.
         """
         sql = """
             SELECT COUNT(`id`) AS count
@@ -306,15 +306,15 @@ class CustomerRepository(BaseRepository):
     def disallow_frozen_current_rp(
         self, uid: int, start: str, end: str
     ) -> int:
-        """Count freeze_block_log entries overlapping the period.
+        """Посчитать записи freeze_block_log, перекрывающие период.
 
         Args:
-            uid: Customer id.
-            start: Period start.
-            end: Period end.
+            uid: Идентификатор клиента.
+            start: Начало периода.
+            end: Конец периода.
 
         Returns:
-            The number of disallowed frozen records.
+            Количество запрещённых замороженных записей.
         """
         sql = """
             SELECT COUNT(`id`) AS count
@@ -334,7 +334,7 @@ class CustomerRepository(BaseRepository):
         return int((row or {}).get("count") or 0)
 
     def is_blocked(self, uid: int) -> int:
-        """Return ``1`` if the user is currently blocked, ``0`` otherwise."""
+        """Вернуть ``1``, если пользователь заблокирован, иначе ``0``."""
         sql = """
             SELECT COUNT(`id`) AS count
             FROM `FREEZING`
@@ -345,7 +345,7 @@ class CustomerRepository(BaseRepository):
         return int((row or {}).get("count") or 0)
 
     def is_block_ordered(self, uid: int) -> int:
-        """Return ``1`` if a future block is scheduled, ``0`` otherwise."""
+        """Вернуть ``1``, если запланирована будущая блокировка, иначе ``0``."""
         sql = """
             SELECT `id`
             FROM `FREEZING`
@@ -357,7 +357,7 @@ class CustomerRepository(BaseRepository):
         return 1 if row else 0
 
     def unblock(self, uid: int) -> bool:
-        """End the current freeze immediately."""
+        """Завершить текущую заморозку немедленно."""
         sql = """
             UPDATE `FREEZING`
             SET `date_unfreeze` = :date_unfreeze
@@ -373,7 +373,7 @@ class CustomerRepository(BaseRepository):
         ) >= 0
 
     def allow_unfrozen_now(self, uid: int) -> int:
-        """Return ``1`` if the customer can be unfrozen right now, ``0`` otherwise."""
+        """Вернуть ``1``, если клиента можно разморозить прямо сейчас, иначе ``0``."""
         sql = """
             SELECT COUNT(`uid`) AS count
             FROM `CUSTOMER`
@@ -386,7 +386,7 @@ class CustomerRepository(BaseRepository):
         return int((row or {}).get("count") or 0)
 
     def get_suspend_from(self, uid: int) -> dict[str, Any] | None:
-        """Return ``date_freeze`` / ``date_unfreeze`` from the ``CUSTOMER`` row."""
+        """Вернуть ``date_freeze`` / ``date_unfreeze`` из строки ``CUSTOMER``."""
         sql = """
             SELECT `date_freeze`, `date_unfreeze`
             FROM `CUSTOMER`
@@ -395,7 +395,7 @@ class CustomerRepository(BaseRepository):
         return self._fetchone(sql, {"uid": uid})
 
     def get_date_block(self, uid: int) -> dict[str, Any] | None:
-        """Return the active / scheduled freeze block from ``FREEZING``."""
+        """Вернуть активную/запланированную блокировку заморозки из ``FREEZING``."""
         sql = """
             SELECT `date_freeze`, `date_unfreeze`
             FROM `FREEZING`
@@ -408,7 +408,7 @@ class CustomerRepository(BaseRepository):
     # Discounts
     # ------------------------------------------------------------------ #
     def get_planning_discounts(self, uid: int) -> dict[str, int]:
-        """Return the max current / next discount for the user."""
+        """Вернуть максимальную текущую/следующую скидку для пользователя."""
         sql = """
             SELECT IFNULL(MAX(DISCOUNT.discount), 0)     AS discount,
                    IFNULL(MAX(DISCOUNT.next_discount), 0) AS next_discount
@@ -422,7 +422,7 @@ class CustomerRepository(BaseRepository):
         }
 
     def get_personal_discount(self, uid: int) -> int:
-        """Return the current ``usual`` discount percentage."""
+        """Вернуть текущий процент скидки ``usual``."""
         sql = """
             SELECT `discount`
             FROM DISCOUNT
@@ -433,7 +433,7 @@ class CustomerRepository(BaseRepository):
         return int((row or {}).get("discount") or 0)
 
     def set_next_personal_discount(self, uid: int, percent: int = 0) -> bool:
-        """Set the next-period ``usual`` discount."""
+        """Установить скидку ``usual`` на следующий период."""
         sql = """
             UPDATE `DISCOUNT`
             SET `next_discount` = :percent
@@ -446,17 +446,18 @@ class CustomerRepository(BaseRepository):
     # Generic updates
     # ------------------------------------------------------------------ #
     def update_customer(self, uid: int, update_data: dict[str, Any]) -> bool:
-        """Update arbitrary columns on the ``CUSTOMER`` table.
+        """Обновить произвольные столбцы в таблице ``CUSTOMER``.
 
-        Only the keys present in :attr:`update_data` are written; ``None``
-        values become ``NULL``.
+        Записываются только ключи, присутствующие в :attr:`update_data`;
+        значения ``None`` становятся ``NULL``.
 
         Args:
-            uid: Customer id.
-            update_data: Column → value map.
+            uid: Идентификатор клиента.
+            update_data: Соответствие столбец → значение.
 
         Returns:
-            ``True`` if the statement was executed (regardless of affected rows).
+            ``True``, если инструкция была выполнена (независимо от количества
+            затронутых строк).
         """
         if not update_data:
             return False
@@ -469,15 +470,15 @@ class CustomerRepository(BaseRepository):
         return self._execute(sql, params) >= 0
 
     def set_block(self, uid: int, date_freeze: str, date_unfreeze: str) -> int | None:
-        """Insert a new ``FREEZING`` row representing a scheduled block.
+        """Вставить новую строку ``FREEZING``, представляющую запланированную блокировку.
 
         Args:
-            uid: Customer id.
-            date_freeze: Freeze start.
-            date_unfreeze: Freeze end.
+            uid: Идентификатор клиента.
+            date_freeze: Начало заморозки.
+            date_unfreeze: Конец заморозки.
 
         Returns:
-            New ``FREEZING.id``, or ``None`` on failure.
+            Новый ``FREEZING.id`` или ``None`` при неудаче.
         """
         sql = """
             INSERT INTO `FREEZING` (`uid`, `date_freeze`, `date_unfreeze`, `state`)
@@ -493,20 +494,20 @@ class CustomerRepository(BaseRepository):
     # Real-IP helpers
     # ------------------------------------------------------------------ #
     def get_free_ip_one(self, nid: int | str) -> str:
-        """Return a free IP from the ``getFreeipOne`` MySQL function.
+        """Вернуть свободный IP из MySQL-функции ``getFreeipOne``.
 
         Args:
-            nid: Network id.
+            nid: Идентификатор сети.
 
         Returns:
-            IP address as a string (``"0"`` when none available).
+            IP-адрес как строка (``"0"``, если доступных нет).
         """
         sql = "SELECT getFreeipOne(:nid) AS ip"
         row = self._fetchone(sql, {"nid": nid})
         return str((row or {}).get("ip") or "0")
 
     def is_ip_exist(self, ip: str) -> int:
-        """Return the number of resources already using the given IP."""
+        """Вернуть количество ресурсов, уже использующих данный IP."""
         sql = """
             SELECT COUNT(r.rid) AS count
             FROM RESOURCE r
@@ -519,7 +520,7 @@ class CustomerRepository(BaseRepository):
         return int((row or {}).get("count") or 0)
 
     def set_ip(self, sid: int, ip: str) -> bool:
-        """Bind the given IP to the resources of ``sid``."""
+        """Привязать данный IP к ресурсам ``sid``."""
         sql1 = """
             UPDATE `RESOURCE`
             SET `service_info` = :ip
@@ -537,7 +538,7 @@ class CustomerRepository(BaseRepository):
         return True
 
     def find_email_smotreshka_by_uid(self, uid: int) -> str:
-        """Return the stored Smotreshka email for the user (``''`` if none)."""
+        """Вернуть сохранённый email Smotreshka для пользователя (``''``, если нет)."""
         sql = """
             SELECT `data` AS smotreshkaMail
             FROM `CUSTOMER_OPTIONS`

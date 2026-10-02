@@ -1,8 +1,8 @@
-"""FastAPI dependencies for database sessions.
+"""Зависимости FastAPI для сессий базы данных.
 
-Three dependencies are exposed — one per logical database — and each yields
-a fresh :class:`~sqlalchemy.orm.Session` that is closed automatically when
-the request ends.
+Предоставлены три зависимости — по одной на логическую базу данных — и
+каждая отдаёт свежую :class:`~sqlalchemy.orm.Session`, которая
+автоматически закрывается по завершении запроса.
 """
 
 from __future__ import annotations
@@ -15,10 +15,10 @@ from app.db.session import SessionLocal, SessionLocalClient, SessionLocalLk
 
 
 def get_db() -> Iterator[Session]:
-    """Yield a main-DB session scoped to the request.
+    """Отдать сессию основной БД, привязанную к запросу.
 
     Yields:
-        A :class:`Session` bound to the main database.
+        :class:`Session`, привязанная к основной базе данных.
     """
     session = SessionLocal()
     try:
@@ -28,10 +28,10 @@ def get_db() -> Iterator[Session]:
 
 
 def get_db_client() -> Iterator[Session]:
-    """Yield a webclient-log session scoped to the request.
+    """Отдать сессию webclient-log, привязанную к запросу.
 
     Yields:
-        A :class:`Session` bound to the webclient_logs database.
+        :class:`Session`, привязанная к базе данных webclient_logs.
     """
     session = SessionLocalClient()
     try:
@@ -41,10 +41,10 @@ def get_db_client() -> Iterator[Session]:
 
 
 def get_db_lk() -> Iterator[Session]:
-    """Yield an LK-log session scoped to the request.
+    """Отдать сессию LK-log, привязанную к запросу.
 
     Yields:
-        A :class:`Session` bound to the st_logs database.
+        :class:`Session`, привязанная к базе данных st_logs.
     """
     session = SessionLocalLk()
     try:

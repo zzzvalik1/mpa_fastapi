@@ -1,17 +1,17 @@
-"""Request / response logging middleware.
+"""Логирование запросов / ответов (middleware).
 
-Logs every incoming request and the corresponding response status to the
-main application logger.  This complements the per-logger rotating file
-handler configured in :mod:`app.core.logging` and gives a full audit trail
-of API traffic.
+Логирует каждый входящий запрос и соответствующий статус ответа в основной
+логгер приложения. Это дополняет настроенный в :mod:`app.core.logging`
+ротируемый по времени файловый обработчик на каждый логгер и даёт полный
+аудиторский след API-трафика.
 
-The middleware is intentionally lightweight — it does not read the request
-body (which would interfere with streaming payloads) and only records:
+Middleware намеренно лёгкий — он не читает тело запроса (что мешало бы
+стриминговым полезным нагрузкам) и фиксирует только:
 
-* the HTTP method and path
-* the originating client IP (honouring ``X-Forwarded-For``)
-* the response status code
-* the round-trip duration in milliseconds
+* HTTP-метод и путь
+* исходящий IP клиента (с учётом ``X-Forwarded-For``)
+* статус-код ответа
+* длительность кругового пути в миллисекундах
 """
 
 from __future__ import annotations
@@ -29,13 +29,13 @@ from app.core.logging import get_logger
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
-    """Log every request and its response status."""
+    """Логировать каждый запрос и статус его ответа."""
 
     def __init__(self, app: ASGIApp) -> None:
-        """Initialise the middleware.
+        """Инициализировать middleware.
 
         Args:
-            app: The wrapped ASGI application.
+            app: Обёрнутое ASGI-приложение.
         """
         super().__init__(app)
         self.logger = get_logger()
@@ -45,14 +45,14 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         request: Request,
         call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
-        """Process the request, log the round-trip, then return the response.
+        """Обработать запрос, залогировать круговой путь, затем вернуть ответ.
 
         Args:
-            request: The incoming Starlette :class:`Request`.
-            call_next: The next ASGI handler in the chain.
+            request: Входящий Starlette :class:`Request`.
+            call_next: Следующий ASGI-обработчик в цепочке.
 
         Returns:
-            The :class:`Response` produced by the downstream handler.
+            :class:`Response`, полученный от нижестоящего обработчика.
         """
         request_id = request.headers.get("x-request-id") or str(uuid.uuid4())
         forwarded = request.headers.get("x-forwarded-for")

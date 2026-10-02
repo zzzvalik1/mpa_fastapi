@@ -1,4 +1,4 @@
-"""Account endpoints (``/subscriber/accounts`` group)."""
+"""Эндпоинты аккаунтов (группа ``/subscriber/accounts``)."""
 
 from __future__ import annotations
 
@@ -21,14 +21,14 @@ def get_accounts(
     uid: CurrentUid,
     service: CustomerServiceDep,
 ) -> Envelope[list]:
-    """Return the list of accounts owned by the subscriber.
+    """Вернуть список аккаунтов подписчика.
 
     Args:
-        uid: Authenticated user id.
-        service: Injected :class:`CustomerService`.
+        uid: id аутентифицированного пользователя.
+        service: Внедрённый :class:`CustomerService`.
 
     Returns:
-        An :class:`Envelope` whose ``data`` is a list with one account dict.
+        :class:`Envelope`, у которого ``data`` — список с одним dict аккаунта.
     """
     return Envelope(success=True, data=service.get_accounts(uid), message="success", code=200)
 
@@ -44,15 +44,15 @@ def get_account(
     uid: CurrentUid,
     service: CustomerServiceDep,
 ) -> Envelope[dict]:
-    """Return a single account by id.
+    """Вернуть один аккаунт по id.
 
     Args:
-        account_id: Path account id (must equal ``uid``).
-        uid: Authenticated user id.
-        service: Injected :class:`CustomerService`.
+        account_id: id аккаунта из пути (должен совпадать с ``uid``).
+        uid: id аутентифицированного пользователя.
+        service: Внедрённый :class:`CustomerService`.
 
     Returns:
-        An :class:`Envelope` whose ``data`` is the account dict.
+        :class:`Envelope`, у которого ``data`` — dict аккаунта.
     """
     return Envelope(success=True, data=service.get_account(uid, account_id), message="success", code=200)
 
@@ -69,16 +69,16 @@ def change_account(
     uid: CurrentUid,
     service: CustomerServiceDep,
 ) -> Envelope[None]:
-    """Apply a ``suspend`` / ``unsuspend`` / ``promised-pay`` action.
+    """Применить действие ``suspend`` / ``unsuspend`` / ``promised-pay``.
 
     Args:
-        account_id: Path account id.
-        body: Action payload.
-        uid: Authenticated user id.
-        service: Injected :class:`CustomerService`.
+        account_id: id аккаунта из пути.
+        body: Полезная нагрузка действия.
+        uid: id аутентифицированного пользователя.
+        service: Внедрённый :class:`CustomerService`.
 
     Returns:
-        An :class:`Envelope` describing the outcome.
+        :class:`Envelope`, описывающий результат.
     """
     result = service.change_account(
         uid, account_id, body.action, body.date_start, body.date_end
@@ -102,16 +102,16 @@ def get_pay_link(
     service: CustomerServiceDep,
     amount: float = Query(..., ge=0, description="Сумма платежа."),
 ) -> Envelope[dict]:
-    """Return the payment URL payload.
+    """Вернуть полезную нагрузку с URL для платежа.
 
     Args:
-        account_id: Path account id.
-        uid: Authenticated user id.
-        service: Injected :class:`CustomerService`.
-        amount: Query parameter — payment amount.
+        account_id: id аккаунта из пути.
+        uid: id аутентифицированного пользователя.
+        service: Внедрённый :class:`CustomerService`.
+        amount: Query-параметр — сумма платежа.
 
     Returns:
-        An :class:`Envelope` whose ``data`` is the pay-link payload.
+        :class:`Envelope`, у которого ``data`` — полезная нагрузка pay-link.
     """
     return Envelope(success=True, data=service.get_pay_link(uid, amount), message="success", code=200)
 
@@ -128,7 +128,7 @@ def get_auto_pay_link(
     service: CustomerServiceDep,
     amount: float = Query(..., ge=0, description="Сумма автоплатежа."),
 ) -> Envelope[dict]:
-    """Return the auto-payment URL payload."""
+    """Вернуть полезную нагрузку с URL для автоплатежа."""
     return Envelope(success=True, data=service.get_auto_pay_link(uid, amount), message="success", code=200)
 
 
@@ -143,10 +143,10 @@ def set_auto_pay_off(
     uid: CurrentUid,
     service: CustomerServiceDep,
 ) -> Envelope:
-    """Disable the auto-payment binding for the user.
+    """Отключить привязку автоплатежа для пользователя.
 
     Returns:
-        An :class:`Envelope` describing the outcome.
+        :class:`Envelope`, описывающий результат.
     """
     result = service.set_auto_pay_off(uid)
     return Envelope(
