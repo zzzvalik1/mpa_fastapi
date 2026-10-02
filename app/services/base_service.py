@@ -300,7 +300,9 @@ class BaseService:
         tarif_type = int(user.get("tarif_type") or 0)
         op = self.customer_repo.find_op_by_uid(uid)
         opq = self.customer_repo.find_opq_by_sid(int(service.get("sid") or 0))
-        status = int(user.get("user_status") or 0)
+        # PHP использует $user->status = s.status (статус услуги),
+        # а НЕ $user->user_status = c.status (статус клиента).
+        status = int(user.get("status") or 0)
 
         if tarif_type != 2:
             return PromisedPayPrecheck(sum=None, promised_until=None, opstatus="unavailable")

@@ -153,7 +153,7 @@ class ServiceService(BaseService):
                     "total": float(primary_row.get("nextTariffFee") or 0.0)
                     * (100 - float(primary_row.get("discount") or 0)) / 100,
                     "currency": RUB_CURRENCY.model_dump(),
-                    "frequency": _duration_slug(primary_row.get("nextTariffDuration") and int(primary_row["nextTariffDuration"])),
+                    "frequency": primary_row.get("nextTariffDuration") or "unknown",
                 },
                 "state": _status_block(
                     int(primary_row.get("codeStatus") or 0), primary_row.get("status")
@@ -179,7 +179,7 @@ class ServiceService(BaseService):
             price = {
                 "total": float(s.get("tariffFee") or 0.0),
                 "currency": RUB_CURRENCY.model_dump(),
-                "frequency": _duration_slug(s.get("tariffDuration") and int(s["tariffDuration"])),
+                "frequency": s.get("tariffDuration") or "unknown",
             }
             state = _status_block(int(s.get("codeStatus") or 0), s.get("status"))
             date_expire = s.get("date_expire")
@@ -227,7 +227,7 @@ class ServiceService(BaseService):
             "total": float(primary_row.get("tariffFee") or 0.0)
             * (100 - float(primary_row.get("discount") or 0)) / 100,
             "currency": RUB_CURRENCY.model_dump(),
-            "frequency": _duration_slug(primary_row.get("tariffDuration") and int(primary_row["tariffDuration"])),
+            "frequency": primary_row.get("tariffDuration") or "unknown",
         }
         primary_entry = {
             "id": int(primary_row.get("serviceId") or 0),
@@ -591,7 +591,7 @@ class ServiceService(BaseService):
                 "price": {
                     "total": float(s.get("serviceFee") or 0.0),
                     "currency": RUB_CURRENCY.model_dump(),
-                    "frequency": _duration_slug(int(main_service.get("tariffDuration") or 0) if main_service.get("tariffDuration") else None),
+                    "frequency": main_service.get("tariffDuration") or "unknown",
                 },
                 "state": {
                     "id": 1 if unlock else 2,

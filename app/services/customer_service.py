@@ -39,9 +39,10 @@ class CustomerService(BaseService):
         pay_until = None
         ended_at = None
         if date_expire:
-            dt = self._parse_date_dt(date_expire)
+            dt = BaseService._parse_date_dt(date_expire)
             if dt is not None:
-                pay_until = (dt - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
+                # PHP: date('Y-m-d H:i:s ', ...) — с trailing space!
+                pay_until = (dt - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S ")
                 ended_at = pay_until
             else:
                 pay_until = str(date_expire)
@@ -53,7 +54,8 @@ class CustomerService(BaseService):
             "started_at": user.get("date_register"),
             "ended_at": ended_at,
             "promised_pay": {
-                "sum": precheck.sum,
+                # PHP: (float)$precheckOplatezh->sum — кастует к float (null → 0.0).
+                "sum": float(precheck.sum) if precheck.sum is not None else None,
                 "promised_until": precheck.promised_until,
                 "status": precheck.opstatus,
             },

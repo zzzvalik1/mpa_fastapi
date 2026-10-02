@@ -95,7 +95,8 @@ class TariffService(BaseService):
                 "price": {
                     "total": fee,
                     "currency": RUB_CURRENCY.model_dump(),
-                    "frequency": _duration_slug(int(primary.get("duration") or 0)),
+                    # PHP: $service->tariffDuration — строка из SQL (уже "month"/"30 day"/...).
+                    "frequency": primary.get("tariffDuration") or "unknown",
                 },
                 "started_at": primary.get("date_expire"),
             })

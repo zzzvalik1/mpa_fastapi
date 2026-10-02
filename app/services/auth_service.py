@@ -137,7 +137,8 @@ class AuthService:
         uid = int(user["uid"])
         token = encode_token(uid, self.settings)
         self.logger.info("User of id: %s only has logged in", uid)
-        return {"id": str(uid), "jwt": token}
+        # PHP: 'id' => $user->uid — целое число (без cast к string).
+        return {"id": uid, "jwt": token}
 
     def logout(self, uid: int) -> None:
         """Validate that the user exists (the original API only logs the event).

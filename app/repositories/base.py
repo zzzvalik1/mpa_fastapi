@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import date, datetime
+from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import text
@@ -9,6 +11,38 @@ from sqlalchemy.orm import Session
 
 from app.core.exceptions import DatabaseError
 from app.core.logging import get_logger
+
+
+def _convert_value(value: Any) -> Any:
+    """Конвертировать значение из БД в JSON-совместимый тип.
+
+    PyMySQL возвращает типизированные Python-объекты (``datetime.date``,
+    ``datetime.datetime``, ``Decimal``), тогда как PHP PDO отдаёт всё
+    строками. Чтобы JSON-ответы FastAPI совпадали с PHP-референсом по
+    формату, конвертируем:
+
+    * ``datetime.datetime`` → ``"YYYY-MM-DD HH:MM:SS"`` (MySQL-формат)
+    * ``datetime.date``     → ``"YYYY-MM-DD"``
+    * ``Decimal``           → ``float``
+
+    Args:
+        value: Сырое значение из БД.
+
+    Returns:
+        Конвертированное значение.
+    """
+    if isinstance(value, datetime):
+        return value.strftime("%Y-%m-%d %H:%M:%S")
+    if isinstance(value, date):
+        return value.strftime("%Y-%m-%d")
+    if isinstance(value, Decimal):
+        return float(value)
+    return value
+
+
+def _convert_row(row: dict[str, Any]) -> dict[str, Any]:
+    """Применить :func:`_convert_value` к каждому значению в строке."""
+    return {k: _convert_value(v) for k, v in row.items()}
 
 
 class BaseRepository:
@@ -49,7 +83,7 @@ class BaseRepository:
         """
         try:
             result = self.session.execute(text(sql), params or {})
-            return [dict(row._mapping) for row in result.fetchall()]
+            return [_convert_row(dict(row._mapping)) for row in result.fetchall()]
         except Exception as exc:
             self.logger.exception("SQL fetchall failed: %s", exc)
             raise DatabaseError("database query failed", cause=exc) from exc
@@ -71,7 +105,7 @@ class BaseRepository:
         try:
             result = self.session.execute(text(sql), params or {})
             row = result.fetchone()
-            return dict(row._mapping) if row is not None else None
+            return _convert_row(dict(row._mapping)) if row is not None else None
         except Exception as exc:
             self.logger.exception("SQL fetchone failed: %s", exc)
             raise DatabaseError("database query failed", cause=exc) from exc
