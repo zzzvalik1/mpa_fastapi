@@ -285,9 +285,10 @@ class BaseService:
 
         date_expire = user.get("date_expire")
         promised_pay = float(user.get("promised_pay") or 0.0)
+        date_expire_dt = self._parse_date_dt(date_expire)
         default_until = (
-            (datetime.fromisoformat(date_expire) + timedelta(days=3)).strftime("%Y-%m-%d %H:%M:%S")
-            if date_expire
+            (date_expire_dt + timedelta(days=3)).strftime("%Y-%m-%d %H:%M:%S")
+            if date_expire_dt is not None
             else None
         )
         result = PromisedPayPrecheck(
@@ -307,22 +308,22 @@ class BaseService:
             sum_cost_services = float(user.get("sum_cost_services") or 0.0)
             return PromisedPayPrecheck(
                 sum=promised_pay + sum_cost_services,
-                promised_until=str(date_expire),
+                promised_until=date_expire_dt.strftime("%Y-%m-%d %H:%M:%S") if date_expire_dt else None,
                 opstatus="expired",
             )
         if opq:
             abon = float(opq.get("abon") or 0.0)
             until = (
-                (datetime.fromisoformat(date_expire) - timedelta(days=1)).strftime("%Y-%m-%d")
-                if date_expire
+                (date_expire_dt - timedelta(days=1)).strftime("%Y-%m-%d")
+                if date_expire_dt is not None
                 else None
             )
             return PromisedPayPrecheck(sum=abon, promised_until=until, opstatus="taken")
 
         yesterday = (date.today() - timedelta(days=1)).strftime("%Y-%m-%d")
         date_expire_day = (
-            datetime.fromisoformat(date_expire).strftime("%Y-%m-%d")
-            if date_expire
+            date_expire_dt.strftime("%Y-%m-%d")
+            if date_expire_dt is not None
             else None
         )
         if status not in (3, 2) and date_expire_day != yesterday:
@@ -341,6 +342,51 @@ class BaseService:
         end = (date.today() + timedelta(days=1 + self.FREEZE_DMAX)).strftime("%Y-%m-%d")
         return tomorrow, end
 
+    # ------------------------------------------------------------------ #
+    # Универсальные парсеры дат
+    # ------------------------------------------------------------------ #
+    # PyMySQL возвращает типизированные объекты (datetime.date для DATE,
+    # datetime.datetime для DATETIME), тогда как PHP PDO отдаёт строки.
+    # Эти хелперы единообразно обрабатывают оба случая.
+    @staticmethod
+    def _parse_date_dt(value: Any) -> datetime | None:
+        """Преобразовать значение в :class:`datetime.datetime` (или ``None``).
+
+        Принимает ``str`` (ISO-8601), :class:`datetime.datetime`,
+        :class:`datetime.date` или ``None``.
+
+        Args:
+            value: Строка даты/даты-времени, либо уже типизированный объект.
+
+        Returns:
+            :class:`datetime.datetime` или ``None`` если вход пустой / невалидный.
+        """
+        if value is None or value == "":
+            return None
+        if isinstance(value, datetime):
+            return value
+        if isinstance(value, date):
+            return datetime.combine(value, datetime.min.time())
+        if isinstance(value, str):
+            try:
+                return datetime.fromisoformat(value)
+            except ValueError:
+                return None
+        return None
+
+    @staticmethod
+    def _parse_date(value: Any) -> date | None:
+        """Преобразовать значение в :class:`datetime.date` (или ``None``).
+
+        Args:
+            value: Строка, :class:`datetime.datetime` или :class:`datetime.date`.
+
+        Returns:
+            :class:`datetime.date` или ``None`` если вход пустой / невалидный.
+        """
+        dt = BaseService._parse_date_dt(value)
+        return dt.date() if dt is not None else None
+
     def _get_planning_costs(self, uid: int, date_start: str) -> float:
         """Вычисляет projected-стоимость заморозки, начинающейся после ``date_expire``."""
         service = self.service_repo.get_primary_service(uid)
@@ -356,11 +402,11 @@ class BaseService:
             return 0.0
 
         try:
-            ds = datetime.fromisoformat(date_start).date()
-            de = datetime.fromisoformat(date_expire).date()
-        except ValueError:
+            ds = self._parse_date(date_start)
+            de = self._parse_date(date_expire)
+        except (ValueError, TypeError):
             return 0.0
-        if ds <= de:
+        if ds is None or de is None or ds <= de:
             return 0.0
 
         cur_fee = float(tariff.get("abonent_fee") or 0.0)
@@ -426,26 +472,22 @@ class BaseService:
         )
 
         freeze_cost = 0.0
-        try:
-            ds = datetime.fromisoformat(date_start).date()
-            de_expire = datetime.fromisoformat(service.get("date_expire") or "").date()
-            if ds > de_expire:
-                freeze_cost = self._get_planning_costs(uid, date_start)
-        except ValueError:
-            pass
+        ds = self._parse_date(date_start)
+        de_expire = self._parse_date(service.get("date_expire"))
+        if ds is not None and de_expire is not None and ds > de_expire:
+            freeze_cost = self._get_planning_costs(uid, date_start)
 
         balance = float(customer.get("balance") or 0.0)
         duration = int(tariff.get("duration") or 0)
         service_status = int(service.get("status") or 0)
 
-        try:
-            ds = datetime.fromisoformat(date_start).date()
-            de = datetime.fromisoformat(date_end).date()
-            dmin = ds + timedelta(days=self.FREEZE_DMIN)
-            dmax = ds + timedelta(days=self.FREEZE_DMAX)
-            tomorrow = date.today() + timedelta(days=1)
-        except ValueError:
+        ds = self._parse_date(date_start)
+        de = self._parse_date(date_end)
+        if ds is None or de is None:
             return PrecheckResult(False, error="Bad dates period.")
+        dmin = ds + timedelta(days=self.FREEZE_DMIN)
+        dmax = ds + timedelta(days=self.FREEZE_DMAX)
+        tomorrow = date.today() + timedelta(days=1)
 
         if duration != 6:
             return PrecheckResult(False, error="Not allow for your primary service.")
@@ -509,17 +551,13 @@ class BaseService:
             else 0
         )
 
-        try:
-            ds = datetime.fromisoformat(date_start).date()
-            de = datetime.fromisoformat(date_end).date()
-        except ValueError:
+        ds = self._parse_date(date_start)
+        de = self._parse_date(date_end)
+        if ds is None or de is None:
             return PrecheckResult(False, info="Bad dates period")
 
         date_expire_raw = service.get("date_expire")
-        try:
-            date_expire = datetime.fromisoformat(date_expire_raw).date() if date_expire_raw else None
-        except ValueError:
-            date_expire = None
+        date_expire = self._parse_date(date_expire_raw)
 
         tomorrow = date.today() + timedelta(days=1)
         dmin = ds + timedelta(days=self.FREEZE_DMIN)
@@ -537,10 +575,7 @@ class BaseService:
         if int(customer.get("status") or 0) not in (1, 2):
             return PrecheckResult(False, info="You are already blocked")
         df_raw = customer.get("date_freeze")
-        try:
-            date_freeze = datetime.fromisoformat(df_raw).date() if df_raw else None
-        except ValueError:
-            date_freeze = None
+        date_freeze = self._parse_date(df_raw)
         if date_freeze and date_freeze >= tomorrow:
             return PrecheckResult(False, info="You are already ordered block")
         if ds < tomorrow:

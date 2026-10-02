@@ -114,9 +114,11 @@ class FeeService(BaseService):
             if not d_reg or not d_exp:
                 continue
             try:
-                dt_reg = datetime.fromisoformat(d_reg)
-                dt_exp = datetime.fromisoformat(d_exp)
-            except ValueError:
+                dt_reg = self._parse_date_dt(d_reg)
+                dt_exp = self._parse_date_dt(d_exp)
+                if dt_reg is None or dt_exp is None:
+                    continue
+            except (ValueError, TypeError):
                 continue
             d_reg_str = dt_reg.strftime("%Y-%m-%d")
             d_exp_str = dt_exp.strftime("%Y-%m-%d")
@@ -182,9 +184,10 @@ class FeeService(BaseService):
     def _build_row(payment: dict[str, Any], sum_paid: float, comment: str) -> dict[str, Any]:
         """Строит строку входящей / общей транзакции."""
         date_pay = payment.get("date_pay")
+        date_pay_dt = BaseService._parse_date_dt(date_pay)
         iso = (
-            datetime.fromisoformat(date_pay).strftime("%Y-%m-%dT%H:%M:%S")
-            if date_pay
+            date_pay_dt.strftime("%Y-%m-%dT%H:%M:%S")
+            if date_pay_dt is not None
             else datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         )
         return {

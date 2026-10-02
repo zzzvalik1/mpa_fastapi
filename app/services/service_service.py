@@ -184,7 +184,7 @@ class ServiceService(BaseService):
             state = _status_block(int(s.get("codeStatus") or 0), s.get("status"))
             date_expire = s.get("date_expire")
             pay_until = (
-                (datetime.fromisoformat(date_expire) - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
+                (self._parse_date_dt(date_expire) - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S") if self._parse_date_dt(date_expire) else None
                 if date_expire
                 else None
             )
@@ -219,7 +219,7 @@ class ServiceService(BaseService):
         # Primary service entry
         date_expire = primary_row.get("date_expire")
         pay_until_primary = (
-            (datetime.fromisoformat(date_expire) - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
+            (self._parse_date_dt(date_expire) - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S") if self._parse_date_dt(date_expire) else None
             if date_expire
             else None
         )
@@ -411,10 +411,8 @@ class ServiceService(BaseService):
             )
             date_expire = service.get("date_expire")
             if date_expire:
-                try:
-                    new_expire = datetime.fromisoformat(date_expire).strftime("%Y-%m-%d 04:00:00")
-                except ValueError:
-                    new_expire = date_expire
+                _dt = self._parse_date_dt(date_expire)
+                new_expire = _dt.strftime("%Y-%m-%d 04:00:00") if _dt else str(date_expire)
                 self.service_repo.update_service(int(service["sid"]), {"date_expire": new_expire})
             self.logger.info(
                 "User of id: %s freeze account from %s to %s.", uid, date_start, date_end
@@ -451,18 +449,12 @@ class ServiceService(BaseService):
         is_frozen = bool(int(user.get("is_frozen") or 0))
         today = datetime.now()
         tomorrow = today + timedelta(days=1)
-        try:
-            df = datetime.fromisoformat(df_raw) if df_raw else None
-            du = datetime.fromisoformat(du_raw) if du_raw else None
-        except ValueError:
-            df = du = None
+        df = self._parse_date_dt(df_raw)
+        du = self._parse_date_dt(du_raw)
 
         if df and du and df < tomorrow and du > today and is_frozen:
             service_expire = service.get("date_expire")
-            try:
-                se = datetime.fromisoformat(service_expire) if service_expire else None
-            except ValueError:
-                se = None
+            se = self._parse_date_dt(service_expire)
             if se and du:
                 new_expire = (se - (du - today)).strftime("%Y-%m-%d")
                 self.service_repo.update_service(int(service["sid"]), {"date_expire": new_expire})

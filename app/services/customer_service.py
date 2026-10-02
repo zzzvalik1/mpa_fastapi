@@ -39,13 +39,13 @@ class CustomerService(BaseService):
         pay_until = None
         ended_at = None
         if date_expire:
-            try:
-                dt = datetime.fromisoformat(date_expire)
+            dt = self._parse_date_dt(date_expire)
+            if dt is not None:
                 pay_until = (dt - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
                 ended_at = pay_until
-            except ValueError:
-                pay_until = date_expire
-                ended_at = date_expire
+            else:
+                pay_until = str(date_expire)
+                ended_at = str(date_expire)
         return {
             "total": float(user.get("balance") or 0.0),
             "recommended_pay": float(user.get("rec_fee") or 0.0),
@@ -274,10 +274,8 @@ class CustomerService(BaseService):
             )
             date_expire = service.get("date_expire")
             if date_expire:
-                try:
-                    new_expire = datetime.fromisoformat(date_expire).strftime("%Y-%m-%d 04:00:00")
-                except ValueError:
-                    new_expire = date_expire
+                new_expire_dt = self._parse_date_dt(date_expire)
+                new_expire = new_expire_dt.strftime("%Y-%m-%d 04:00:00") if new_expire_dt else str(date_expire)
                 self.service_repo.update_service(int(service["sid"]), {"date_expire": new_expire})
             self.logger.info(
                 "User of id: %s frozen service success from %s to %s.", uid, date_start, date_end
@@ -323,18 +321,12 @@ class CustomerService(BaseService):
             is_frozen = bool(int(user.get("is_frozen") or 0))
             today = datetime.now()
             tomorrow = today + timedelta(days=1)
-            try:
-                df = datetime.fromisoformat(date_freeze_raw) if date_freeze_raw else None
-                du = datetime.fromisoformat(date_unfreeze_raw) if date_unfreeze_raw else None
-            except ValueError:
-                df = du = None
+            df = self._parse_date_dt(date_freeze_raw)
+            du = self._parse_date_dt(date_unfreeze_raw)
 
             if df and du and df < tomorrow and du > today and is_frozen:
                 service_expire = service.get("date_expire")
-                try:
-                    se = datetime.fromisoformat(service_expire) if service_expire else None
-                except ValueError:
-                    se = None
+                se = self._parse_date_dt(service_expire)
                 if se and du:
                     new_expire = (se - (du - today)).strftime("%Y-%m-%d")
                     self.service_repo.update_service(int(service["sid"]), {"date_expire": new_expire})
@@ -363,10 +355,8 @@ class CustomerService(BaseService):
             today_str = today.strftime("%Y-%m-%d")
             df_raw = period.get("date_freeze")
             du_raw = period.get("date_unfreeze")
-            try:
-                df = datetime.fromisoformat(df_raw).strftime("%d-%m-%Y") if df_raw else ""
-            except ValueError:
-                df = ""
+            df_dt = self._parse_date_dt(df_raw)
+            df = df_dt.strftime("%d-%m-%Y") if df_dt else ""
             self.write_lk_log(
                 uid, "Отмена добровольной блокировки в МЛК", "freezeDel",
                 {"dateStart": df, "dateEnd": (du_raw or "")},
