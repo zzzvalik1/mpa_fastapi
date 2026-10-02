@@ -14,7 +14,8 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from fastapi import Depends, Header, Request
+from fastapi import Depends, Request
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import InvalidTokenError as AppInvalidTokenError
@@ -46,6 +47,16 @@ DbLkSession = Annotated[Session, Depends(get_db_lk)]
 
 
 # --------------------------------------------------------------------------- #
+# Security scheme — позволяет Swagger UI показывать кнопку "Authorize" (🔒)
+# и автоматически добавлять заголовок Authorization: Bearer <token> во все
+# защищённые эндпоинты.
+# --------------------------------------------------------------------------- #
+# auto_error=False — мы хотим сами обрабатывать отсутствие токена
+# (чтобы выбрасывать наше кастомное AppError, а не дефолтный 403 от FastAPI).
+bearer_scheme = HTTPBearer(auto_error=False)
+
+
+# --------------------------------------------------------------------------- #
 # Client IP
 # --------------------------------------------------------------------------- #
 def client_ip(request: Request) -> str:
@@ -72,33 +83,17 @@ ClientIp = Annotated[str, Depends(client_ip)]
 # --------------------------------------------------------------------------- #
 # Auth dependencies
 # --------------------------------------------------------------------------- #
-def _extract_bearer(authorization: str | None) -> str:
-    """Вернуть сырой токен из заголовка ``Authorization: Bearer <token>``.
-
-    Args:
-        authorization: Сырое значение заголовка (может быть ``None``).
-
-    Returns:
-        Строка токена.
-
-    Raises:
-        AppInvalidTokenError: Если заголовок отсутствует или некорректен.
-    """
-    if not authorization:
-        raise AppInvalidTokenError("missing Authorization header")
-    if not authorization.lower().startswith("bearer "):
-        raise AppInvalidTokenError("empty Bearer token")
-    token = authorization[7:].strip()
-    if not token:
-        raise AppInvalidTokenError("empty Bearer token")
-    return token
-
-
-def current_uid(authorization: Annotated[str | None, Header()] = None) -> int:
+def current_uid(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)] = None,
+) -> int:
     """Вернуть id аутентифицированного пользователя (обязательный JWT).
 
+    Использует :class:`HTTPBearer` security scheme, поэтому Swagger UI
+    автоматически показывает кнопку **Authorize** и отправляет заголовок
+    ``Authorization: Bearer <token>``.
+
     Args:
-        authorization: Заголовок ``Authorization``.
+        credentials: Учётные данные из заголовка (scheme + token).
 
     Returns:
         id пользователя (``uid``).
@@ -106,27 +101,34 @@ def current_uid(authorization: Annotated[str | None, Header()] = None) -> int:
     Raises:
         AppInvalidTokenError: Если токен отсутствует / недействителен / истёк.
     """
-    token = _extract_bearer(authorization)
+    if credentials is None:
+        raise AppInvalidTokenError("missing Authorization header")
+    token = credentials.credentials
+    if not token:
+        raise AppInvalidTokenError("empty Bearer token")
     decoded = decode_token(token)
     return decoded.uid
 
 
-def optional_uid(authorization: Annotated[str | None, Header()] = None) -> int | None:
+def optional_uid(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)] = None,
+) -> int | None:
     """Вернуть id аутентифицированного пользователя или ``None``, если токена нет.
 
     Используется эндпоинтами, которые принимают как аутентифицированные, так и
     анонимные запросы (например, ``POST /subscriber/shop``).
 
     Args:
-        authorization: Заголовок ``Authorization`` (необязательный).
+        credentials: Учётные данные из заголовка (необязательные).
 
     Returns:
         id пользователя или ``None``.
     """
-    if not authorization:
+    if credentials is None:
         return None
     try:
-        return current_uid(authorization=authorization)
+        decoded = decode_token(credentials.credentials)
+        return decoded.uid
     except AppInvalidTokenError:
         return None
 
