@@ -183,11 +183,9 @@ class ServiceService(BaseService):
             }
             state = _status_block(int(s.get("codeStatus") or 0), s.get("status"))
             date_expire = s.get("date_expire")
-            pay_until = (
-                (self._parse_date_dt(date_expire) - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S") if self._parse_date_dt(date_expire) else None
-                if date_expire
-                else None
-            )
+            # PHP: date('Y-m-d H:i:s ', ...) — с trailing space!
+            _dt = self._parse_date_dt(date_expire)
+            pay_until = (_dt - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S ") if _dt else None
             additional_services.append({
                 "id": int(s.get("serviceId") or 0),
                 "title": title,
@@ -218,11 +216,9 @@ class ServiceService(BaseService):
 
         # Primary service entry
         date_expire = primary_row.get("date_expire")
-        pay_until_primary = (
-            (self._parse_date_dt(date_expire) - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S") if self._parse_date_dt(date_expire) else None
-            if date_expire
-            else None
-        )
+        # PHP: date('Y-m-d H:i:s ', ...) — с trailing space!
+        _dt = self._parse_date_dt(date_expire)
+        pay_until_primary = (_dt - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S ") if _dt else None
         primary_price = {
             "total": float(primary_row.get("tariffFee") or 0.0)
             * (100 - float(primary_row.get("discount") or 0)) / 100,
