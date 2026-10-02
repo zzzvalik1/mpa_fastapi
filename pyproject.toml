@@ -1,0 +1,48 @@
+[project]
+name = "mpa-fastapi"
+version = "1.0.0"
+description = "FastAPI port of the mpa_slim (Slim 4) mobile-application API."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [
+    { name = "mpa-fastapi" }
+]
+dependencies = [
+    "fastapi==0.115.6",
+    "uvicorn[standard]==0.34.0",
+    "python-multipart==0.0.20",
+    "pydantic==2.10.4",
+    "pydantic-settings==2.7.1",
+    "python-dotenv==1.0.1",
+    "SQLAlchemy==2.0.36",
+    "PyMySQL==1.1.1",
+    "cryptography==44.0.0",
+    "PyJWT==2.10.1",
+    "bcrypt==4.2.1",
+    "httpx==0.28.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.4",
+    "pytest-asyncio==0.25.2",
+]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+pythonpath = ["."]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"

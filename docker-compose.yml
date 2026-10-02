@@ -1,0 +1,73 @@
+services:
+  # ----------------------------------------------------------------- #
+  # FastAPI application container
+  # ----------------------------------------------------------------- #
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mpa-fastapi:latest
+    container_name: mpa-fastapi-app
+    restart: unless-stopped
+    ports:
+      - "${HOST_PORT:-8080}:8080"
+    env_file:
+      - .env
+    environment:
+      # Override DB host so the container talks to the `mysql` service
+      # declared below when the user is running the full stack via compose.
+      - DB_HOST=${DB_HOST:-mysql}
+      - DB2_HOST=${DB2_HOST:-mysql}
+      - DB3_HOST=${DB3_HOST:-mysql}
+    volumes:
+      # Persist logs across container restarts.
+      - ./storage/logs:/app/storage/logs
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - mpa-net
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ----------------------------------------------------------------- #
+  # MySQL 5.7 (optional — only needed for local dev / CI)
+  # ----------------------------------------------------------------- #
+  mysql:
+    image: mysql:5.7
+    container_name: mpa-fastapi-mysql
+    restart: unless-stopped
+    ports:
+      - "${MYSQL_HOST_PORT:-33060}:3306"
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_DATABASE: ${DB_NAME:-slim4_api_skeleton}
+      MYSQL_USER: ${DB_USER:-root}
+      MYSQL_PASSWORD: ${DB_PASS:-}
+      MYSQL_ROOT_PASSWORD: ${DB_PASS:-}
+    command:
+      - --character-set-server=utf8
+      - --collation-server=utf8_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - mpa-net
+
+networks:
+  mpa-net:
+    driver: bridge
+
+volumes:
+  mysql-data:
+    driver: local
