@@ -38,7 +38,9 @@ class Envelope(BaseModel, Generic[T]):
     model_config = ConfigDict(populate_by_name=True, extra="allow")
 
     success: bool = Field(..., description="Флаг успешности операции.")
-    message: str = Field("success", description="Короткий человекочитаемый статус.")
+    # PHP-референс иногда возвращает message=false (bool) в ошибочных случаях
+    # (например, set_auto_pay_off). Сохраняем совместимость 1:1 с PHP.
+    message: str | bool = Field("success", description="Короткий человекочитаемый статус.")
     code: int = Field(200, ge=100, le=599, description="Код статуса в стиле HTTP.")
     data: T | None = Field(default=None, description="Необязательная полезная нагрузка.")
 
