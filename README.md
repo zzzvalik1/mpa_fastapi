@@ -1,47 +1,47 @@
 # MPA FastAPI
 
-Python 3.12 / FastAPI port of the original `mpa_slim` (Slim 4) mobile-application API.
+Python 3.12 / FastAPI порт оригинального мобильного API `mpa_slim` (Slim 4).
 
-The project reproduces — route-by-route — the REST API defined by the PHP
-Slim 4 reference implementation, while adopting modern Python conventions:
+Проект воспроизводит — маршрут за маршрутом — REST API, определённое в
+PHP Slim 4 референсе, с применением современных Python-конвенций:
 
-* FastAPI + Pydantic v2 + SQLAlchemy 2.x (sync, `PyMySQL` driver).
-* Pydantic-Settings-driven configuration with full type hints.
-* Layered architecture: **endpoints → services → repositories → DB**.
-* Centralised exception hierarchy and JSON envelope (`{success, message, code, data}`).
-* JWT (HS256) auth with the same `jti = sha1(uid + app_key + iat)` formula
-  as the PHP version, so tokens are interchangeable.
-* Time-rotated log files (30 days) via `TimedRotatingFileHandler`.
-* Docker / docker-compose setup with MySQL 5.7.
-* Battery-included tests (`pytest`).
+* FastAPI + Pydantic v2 + SQLAlchemy 2.x (синхронный драйвер `PyMySQL`).
+* Конфигурация через Pydantic-Settings с полными type hints.
+* Слоистая архитектура: **эндпоинты → сервисы → репозитории → БД**.
+* Централизованная иерархия исключений и JSON-конверт (`{success, message, code, data}`).
+* JWT (HS256) авторизация с той же формулой `jti = sha1(uid + app_key + iat)`,
+  что и в PHP, поэтому токены взаимозаменяемы.
+* Ротируемые по времени лог-файлы (30 дней) через `TimedRotatingFileHandler`.
+* Docker / docker-compose с MySQL 5.7.
+* Тесты (`pytest`).
 
 ---
 
-## Project layout
+## Структура проекта
 
 ```
 fastapi/
 ├── app/
-│   ├── main.py                     # FastAPI entry point
+│   ├── main.py                     # Точка входа FastAPI
 │   ├── core/
-│   │   ├── config.py               # Settings (Pydantic v2)
-│   │   ├── logging.py              # 30-day rotating file logger
+│   │   ├── config.py               # Настройки (Pydantic v2)
+│   │   ├── logging.py              # Ротируемый файловый логгер (30 дней)
 │   │   ├── security.py             # JWT encode / decode
-│   │   ├── exceptions.py           # Application exception hierarchy
-│   │   └── exception_handlers.py   # JSON envelope handlers
+│   │   ├── exceptions.py           # Иерархия исключений приложения
+│   │   └── exception_handlers.py   # Обработчики JSON-конверта
 │   ├── db/
-│   │   ├── session.py              # SQLAlchemy engines (3 databases)
+│   │   ├── session.py              # SQLAlchemy-движки (3 БД)
 │   │   └── dependencies.py         # get_db / get_db_client / get_db_lk
-│   ├── schemas/                    # Pydantic request/response models
-│   ├── repositories/               # SQL queries (1 file per table group)
-│   ├── services/                   # Business logic + precheck algorithms
+│   ├── schemas/                    # Pydantic модели запросов/ответов
+│   ├── repositories/               # SQL-запросы (1 файл на группу таблиц)
+│   ├── services/                   # Бизнес-логика + precheck-алгоритмы
 │   ├── api/v1/
-│   │   ├── dependencies.py         # FastAPI deps (current_uid, services, ...)
-│   │   ├── endpoints/              # Route handlers (1 file per resource)
-│   │   └── router.py               # Aggregator mounted at /api/v1
-│   └── middleware/                 # Request logging + CORS
-├── tests/                          # pytest test-suite
-├── storage/logs/                   # Rotating log files (auto-created)
+│   │   ├── dependencies.py         # FastAPI-зависимости (current_uid, сервисы, ...)
+│   │   ├── endpoints/              # Обработчики маршрутов (1 файл на ресурс)
+│   │   └── router.py               # Агрегатор, монтируемый на /api/v1
+│   └── middleware/                 # Логирование запросов + CORS
+├── tests/                          # pytest тесты
+├── storage/logs/                   # Ротируемые лог-файлы (создаются автоматически)
 ├── Dockerfile
 ├── docker-compose.yml
 ├── pyproject.toml
@@ -51,42 +51,44 @@ fastapi/
 
 ---
 
-## API endpoints
+## API эндпоинты
 
-All routes are mounted under `/api/v1`.
+Все маршруты смонтированы под `/api/v1`.
 
-| Method | Path                                                                                        | Auth   | Description                                              |
-|--------|----------------------------------------------------------------------------------------------|--------|----------------------------------------------------------|
-| POST   | `/auth/token`                                                                                | -      | Login (PIN + password) → returns JWT                     |
-| POST   | `/auth/logout`                                                                               | JWT    | Logout (validates user exists)                           |
-| GET    | `/subscriber`                                                                                | JWT    | Get subscriber profile                                   |
-| GET    | `/subscriber/accounts`                                                                       | JWT    | List accounts                                            |
-| GET    | `/subscriber/accounts/{accountId}`                                                           | JWT    | Get a single account                                     |
-| PATCH  | `/subscriber/accounts/{accountId}`                                                           | JWT    | Suspend / unsuspend / promised-pay                       |
-| GET    | `/subscriber/accounts/{accountId}/services`                                                  | JWT    | List services (primary + additional)                     |
-| PATCH  | `/subscriber/accounts/{accountId}/services/{serviceId}`                                      | JWT    | Change tariff / suspend / unsuspend a service            |
-| GET    | `/subscriber/accounts/{accountId}/services/{serviceId}/tariffs`                              | JWT    | List tariffs available for switching                     |
-| GET    | `/subscriber/accounts/{accountId}/services/{serviceId}/additional-services`                  | JWT    | List additional services catalogue                       |
-| PATCH  | `/subscriber/accounts/{accountId}/services/{serviceId}/additional-services/{id}`             | JWT    | Subscribe / unsubscribe an add-on                        |
-| POST   | `/subscriber/accounts/{accountId}/transactions`                                              | JWT    | List transactions                                        |
-| GET    | `/subscriber/accounts/{accountId}/pay-link?amount=...`                                       | JWT    | Get payment URL                                          |
-| GET    | `/subscriber/accounts/{accountId}/auto-payment-link?amount=...`                              | JWT    | Get auto-payment URL                                     |
-| GET    | `/subscriber/accounts/{accountId}/auto-payment-off`                                          | JWT    | Disable auto-payment                                     |
-| GET    | `/resources/promised-pay-terms`                                                              | JWT    | Promised-pay terms HTML                                  |
-| POST   | `/subscriber/shop`                                                                           | opt.   | Send shop-order email to support                         |
-| POST   | `/support/send-email`                                                                        | -      | Send support email                                       |
-| GET    | `/notifications/send`                                                                        | -      | Flush waiting push messages                              |
-| GET    | `/notifications/status`                                                                      | -      | Refresh push statuses                                    |
-| GET    | `/notifications/status-old`                                                                  | -      | Refresh long-pending push statuses                       |
-| GET    | `/health`                                                                                    | -      | Liveness probe                                           |
+| Метод  | Путь                                                                                        | Auth   | Описание                                                |
+|--------|----------------------------------------------------------------------------------------------|--------|---------------------------------------------------------|
+| POST   | `/auth/token`                                                                                | -      | Вход (PIN + пароль) → возвращает JWT                    |
+| POST   | `/auth/logout`                                                                               | JWT    | Выход (проверяет что пользователь существует)           |
+| GET    | `/subscriber`                                                                                | JWT    | Профиль абонента                                        |
+| GET    | `/subscriber/accounts`                                                                       | JWT    | Список аккаунтов                                        |
+| GET    | `/subscriber/accounts/{accountId}`                                                           | JWT    | Отдельный аккаунт                                       |
+| PATCH  | `/subscriber/accounts/{accountId}`                                                           | JWT    | Заморозка / разморозка / обещанный платёж               |
+| GET    | `/subscriber/accounts/{accountId}/services`                                                  | JWT    | Список услуг (основная + дополнительные)                |
+| PATCH  | `/subscriber/accounts/{accountId}/services/{serviceId}`                                      | JWT    | Смена тарифа / заморозка / разморозка услуги             |
+| GET    | `/subscriber/accounts/{accountId}/services/{serviceId}/tariffs`                              | JWT    | Доступные тарифы для смены                              |
+| GET    | `/subscriber/accounts/{accountId}/services/{serviceId}/additional-services`                  | JWT    | Каталог дополнительных услуг                            |
+| PATCH  | `/subscriber/accounts/{accountId}/services/{serviceId}/additional-services/{id}`             | JWT    | Подписка / отписка от доп. услуги                       |
+| POST   | `/subscriber/accounts/{accountId}/transactions`                                              | JWT    | История транзакций                                      |
+| GET    | `/subscriber/accounts/{accountId}/pay-link?amount=...`                                       | JWT    | URL для платежа                                         |
+| GET    | `/subscriber/accounts/{accountId}/auto-payment-link?amount=...`                              | JWT    | URL для автоплатежа                                     |
+| GET    | `/subscriber/accounts/{accountId}/auto-payment-off`                                          | JWT    | Отключить автоплатёж                                    |
+| GET    | `/resources/promised-pay-terms`                                                              | JWT    | HTML условий обещанного платежа                         |
+| POST   | `/subscriber/shop`                                                                           | опц.   | Заявка из магазина на email поддержки                   |
+| POST   | `/support/send-email`                                                                        | -      | Письмо в тех. поддержку                                 |
+| GET    | `/notifications/send`                                                                        | -      | Отправка ожидающих push-уведомлений                     |
+| GET    | `/notifications/status`                                                                      | -      | Обновление статусов push                                |
+| GET    | `/notifications/status-old`                                                                  | -      | Обновление статусов долго-ожидающих push                |
+| GET    | `/health`                                                                                    | -      | Liveness-проба                                          |
 
-Interactive docs are available at `/docs` (Swagger) and `/redoc` (ReDoc).
+> **Важно:** интерактивная документация (`/docs`, `/redoc`, `/openapi.json`)
+> доступна **только в debug-режиме** (`APP_DEBUG=true`). На продакшене
+> (`APP_DEBUG=false`) эти эндпоинты полностью отключены.
 
 ---
 
-## Getting started
+## Быстрый старт
 
-### 1. Local development
+### 1. Локальная разработка
 
 ```bash
 cd fastapi
@@ -95,7 +97,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 
 cp .env.example .env
-# edit .env with your DB credentials, JWT secret, mail/push URLs
+# отредактируйте .env: параметры БД, JWT-секрет, URL mail/push
 
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
 ```
@@ -105,15 +107,15 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
 ```bash
 cd fastapi
 cp .env.example .env
-# edit .env
+# отредактируйте .env
 
 docker compose up -d --build
 # API:        http://localhost:8080
-# Swagger:    http://localhost:8080/docs
+# Swagger:    http://localhost:8080/docs  (только при APP_DEBUG=true)
 # MySQL:      localhost:33060
 ```
 
-### 3. Tests
+### 3. Тесты
 
 ```bash
 cd fastapi
@@ -124,51 +126,53 @@ pytest -v
 
 ---
 
-## Configuration
+## Конфигурация
 
-All settings live in `.env` (see `.env.example`). Highlights:
+Все настройки хранятся в `.env` (см. `.env.example`). Основные:
 
-| Variable          | Description                                              | Default                |
+| Переменная        | Описание                                                  | По умолчанию          |
 |-------------------|----------------------------------------------------------|------------------------|
-| `APP_NAME`        | Application name (JWT `iss` claim)                       | `MLK_company`          |
-| `APP_KEY`         | Secret used in JWT `jti` computation                     | `appsecretkey`         |
-| `JWT_KEY`         | JWT signing key                                          | `jwtsecretkey`         |
-| `JWT_ALGORITHM`   | JWT algorithm (`HS256` / `HS384` / `HS512`)              | `HS256`                |
-| `JWT_LIFETIME`    | Token lifetime in seconds                                | `3600`                 |
-| `DB_HOST`/`DB2_*`/`DB3_*` | Main / webclient / LK database connections     | `127.0.0.1`            |
-| `LOG_DIR`         | Directory for rotating log files                         | `storage/logs`         |
-| `LOG_RETENTION_DAYS` | Log retention (days)                                 | `30`                   |
-| `MAIL_URL`/`MAIL_KEY` | External mailer gateway                             | —                      |
-| `PUSH_URL`/`PUSH_KEY` | External push-notification gateway                  | —                      |
+| `APP_NAME`        | Имя приложения (JWT-клейм `iss`)                         | `MLK_company`          |
+| `APP_DEBUG`       | Включить debug-режим (показ ошибок + /docs, /redoc)      | `true`                 |
+| `APP_KEY`         | Секрет для вычисления JWT `jti`                          | `appsecretkey`         |
+| `JWT_KEY`         | Ключ подписи JWT                                         | `jwtsecretkey`         |
+| `JWT_ALGORITHM`   | Алгоритм JWT (`HS256` / `HS384` / `HS512`)               | `HS256`                |
+| `JWT_LIFETIME`    | Время жизни токена в секундах                            | `3600`                 |
+| `DB_HOST`/`DB2_*`/`DB3_*` | Подключения к основной / webclient / LK БД     | `127.0.0.1`            |
+| `LOG_DIR`         | Директория для ротируемых лог-файлов                     | `storage/logs`         |
+| `LOG_RETENTION_DAYS` | Срок хранения логов в днях                            | `30`                   |
+| `MAIL_URL`/`MAIL_KEY` | Внешний mailer-шлюз                                  | —                      |
+| `PUSH_URL`/`PUSH_KEY` | Внешний push-шлюз                                    | —                      |
 
 ---
 
-## Logging
+## Логирование
 
-Two named loggers are configured in `app/core/logging.py`:
+Два именованных логгера настроены в `app/core/logging.py`:
 
-* `logged`     → `storage/logs/log.log`        (main application)
-* `push_log`   → `storage/logs/push_log.log`   (push workers)
+* `logged`     → `storage/logs/log.log`        (основное приложение)
+* `push_log`   → `storage/logs/push_log.log`   (push-воркеры)
 
-Both use `TimedRotatingFileHandler(when="midnight", backupCount=30)` so a new
-file is created every day and **30 days** of history are kept.  Every request
-is also logged with method, path, status code, duration (ms) and client IP
-by `RequestLoggingMiddleware`.
+Оба используют `TimedRotatingFileHandler(when="midnight", backupCount=30)`,
+поэтому новый файл создаётся каждый день и хранится **30 дней** истории.
+Каждый запрос также логируется с методом, путём, статус-кодом, длительностью
+(мс) и IP клиента через `RequestLoggingMiddleware`.
 
 ---
 
-## Notes on the port
+## Примечания по порту
 
-* The `password_verify` flow uses Python's `bcrypt` package.  PHP's
-  `password_hash(..., PASSWORD_DEFAULT)` produces `$2y$` hashes; we
-  rewrite the prefix to `$2b$` before calling `bcrypt.checkpw` so hashes
-  produced by either implementation validate interchangeably.
-* The `precheck*` algorithms (`precheckOplatezh`, `precheckFreeze`,
-  `precheckBlock`, `precheckUnFreeze`, `precheckUnBlock`) are ported
-  verbatim from `App/Controller/Base.php` and live in
-  `app/services/base_service.py`.
-* The push endpoints replace the PHP `shell_exec("ps ax | grep …")`
-  single-flight trick with an in-process `threading.Lock`, which is
-  sufficient for the recommended single-worker uvicorn deployment.
-* No ORM models are declared — every SQL query is written explicitly with
-  `:param` placeholders so behaviour matches the PHP reference exactly.
+* Проверка пароля использует Python-пакет `bcrypt`. PHP-функция
+  `password_hash(..., PASSWORD_DEFAULT)` создаёт хэши с префиксом `$2y$`;
+  мы переписываем префикс на `$2b$` перед вызовом `bcrypt.checkpw`, поэтому
+  хэши, созданные любой из реализаций, валидируются взаимозаменяемо.
+* Алгоритмы `precheck*` (`precheckOplatezh`, `precheckFreeze`,
+  `precheckBlock`, `precheckUnFreeze`, `precheckUnBlock`) перенесены дословно
+  из `App/Controller/Base.php` и находятся в `app/services/base_service.py`.
+* Push-эндпоинты заменяют PHP-трюк single-flight `shell_exec("ps ax | grep …")`
+  на in-process `threading.Lock`, что достаточно для рекомендуемого
+  single-worker uvicorn-деплоя.
+* ORM-модели не объявляются — каждый SQL-запрос написан явно с
+  `:param` плейсхолдерами, чтобы поведение точно совпадало с PHP-референсом.
+* Документация (`/docs`, `/redoc`, `/openapi.json`) отключается на продакшене
+  через `APP_DEBUG=false`.
