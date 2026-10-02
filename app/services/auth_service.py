@@ -1,8 +1,8 @@
-"""Сервис аутентификации (login / logout).
+"""Authentication service (login / logout).
 
-Заменяет ``App/Controller/AuthController.php``.  Проверка пароля выполняется
-через :mod:`bcrypt`, поэтому хеши, созданные PHP-функцией
-``password_hash(..., PASSWORD_DEFAULT)``, продолжают проходить проверку.
+Replaces ``App/Controller/AuthController.php``.  Password verification is
+done with :mod:`bcrypt` so that hashes produced by PHP's
+``password_hash(..., PASSWORD_DEFAULT)`` continue to validate.
 """
 
 from __future__ import annotations
@@ -21,11 +21,11 @@ from app.repositories.customer_repository import CustomerRepository
 
 
 class AuthService:
-    """Инкапсулирует бизнес-логику login / logout.
+    """Encapsulates login / logout business logic.
 
     Attributes:
-        customer_repo: Репозиторий клиентов (основная БД).
-        settings: Настройки приложения.
+        customer_repo: Customer repository (main DB).
+        settings: Application settings.
     """
 
     def __init__(
@@ -33,11 +33,11 @@ class AuthService:
         customer_repo: CustomerRepository,
         settings: Settings = _settings,
     ) -> None:
-        """Инициализирует сервис.
+        """Initialise the service.
 
         Args:
-            customer_repo: Экземпляр репозитория клиентов.
-            settings: Настройки приложения (по умолчанию — глобальный singleton).
+            customer_repo: Customer repository instance.
+            settings: Application settings (defaults to the global singleton).
         """
         self.customer_repo = customer_repo
         self.settings = settings
@@ -47,47 +47,78 @@ class AuthService:
     # Helpers
     # ------------------------------------------------------------------ #
     @staticmethod
-    def _verify_password(plain: str, stored_hash: str | None) -> bool:
-        """Проверяет открытый пароль против сохранённого хеша.
+    def _verify_password(plain: str, stored_value: str | None) -> bool:
+        """Verify a plain-text password against the value stored in DB.
 
-        Поддерживаются как PHP-функция ``password_hash`` (bcrypt, префикс ``$2y$``),
-        так и Python bcrypt (префикс ``$2b$``).  ``$2a$`` также принимается.
+        Reproduces the **non-standard** logic of the PHP reference
+        (``AuthController::login``):
+
+        .. code-block:: php
+
+            $password_hash_input = password_hash($user->password, PASSWORD_DEFAULT);
+            if (password_verify($password, $password_hash_input)) { ... }
+
+        The PHP code takes the password **from the DB**, hashes it, and then
+        calls ``password_verify(user_input, hash_of_db_value)`` — which is
+        ``True`` iff ``user_input == db_value``.  This works for **any**
+        format stored in the DB (plaintext, MD5, SHA1, another hash …).
+
+        We reproduce that behaviour here with a small optimisation: if the
+        stored value already **is** a bcrypt hash (prefix ``$2y$`` / ``$2b$``
+        / ``$2a$``) we verify directly with ``bcrypt.checkpw`` — otherwise
+        we mirror the PHP trick (hash the stored value, then ``checkpw``
+        the user input against it).
 
         Args:
-            plain: Открытый пароль, введённый пользователем.
-            stored_hash: Хеш, сохранённый в БД (может быть ``None``).
+            plain: Plain-text password entered by the user.
+            stored_value: Password (or hash) stored in the ``CUSTOMER.password``
+                column.  May be ``None``.
 
         Returns:
-            ``True``, если пароль совпадает.
+            ``True`` if the password matches.
         """
-        if not stored_hash:
+        if not stored_value:
             return False
-        # PHP uses $2y$; Python bcrypt expects $2b$ (or $2a$ / $2y$ in newer versions).
-        h = stored_hash
-        if h.startswith("$2y$"):
-            h = "$2b$" + h[4:]
+
+        stored_bytes = stored_value.encode("utf-8")
+        plain_bytes = plain.encode("utf-8")
+
+        # Case 1 — DB already holds a bcrypt hash → verify directly.
+        if stored_value.startswith(("$2y$", "$2b$", "$2a$")):
+            h = stored_value
+            if h.startswith("$2y$"):
+                h = "$2b$" + h[4:]
+            try:
+                return bcrypt.checkpw(plain_bytes, h.encode("utf-8"))
+            except ValueError:
+                return False
+
+        # Case 2 — DB holds plaintext (or any non-bcrypt format).
+        # Mirror PHP: hash the stored value, then checkpw the user input.
+        # bcrypt.checkpw(input, hash(stored)) == True  iff  input == stored.
         try:
-            return bcrypt.checkpw(plain.encode("utf-8"), h.encode("utf-8"))
-        except ValueError:
+            hashed = bcrypt.hashpw(stored_bytes, bcrypt.gensalt())
+            return bcrypt.checkpw(plain_bytes, hashed)
+        except (ValueError, TypeError):
             return False
 
     # ------------------------------------------------------------------ #
     # Public API
     # ------------------------------------------------------------------ #
     def login(self, username: str, password: str) -> dict[str, str]:
-        """Аутентифицирует абонента и возвращает payload с JWT-токеном.
+        """Authenticate a subscriber and return a JWT token payload.
 
         Args:
-            username: 6-значный PIN-код.
-            password: Открытый пароль.
+            username: 6-digit PIN code.
+            password: Plain-text password.
 
         Returns:
-            Словарь ``{"id": <uid>, "jwt": <token>}``.
+            A dict ``{"id": <uid>, "jwt": <token>}``.
 
         Raises:
-            IncorrectUsernameError: Если ``username`` не состоит из 6 символов.
-            UserNotFoundError: Если ни один клиент не соответствует PIN.
-            InvalidCredentialsError: Если пароль не прошёл проверку.
+            IncorrectUsernameError: If ``username`` is not 6 characters long.
+            UserNotFoundError: If no customer matches the PIN.
+            InvalidCredentialsError: If the password does not verify.
         """
         if len(username) != 6 or not username or not password:
             self.logger.error("Incorrect username. Username: %s.", username)
@@ -98,8 +129,8 @@ class AuthService:
             self.logger.error("Username is not found. Username: %s.", username)
             raise UserNotFoundError()
 
-        stored_hash = user.get("password")
-        if not self._verify_password(password, stored_hash):
+        stored_value = user.get("password")
+        if not self._verify_password(password, stored_value):
             self.logger.error("Incorrect username or password. Username: %s.", username)
             raise InvalidCredentialsError()
 
@@ -109,13 +140,13 @@ class AuthService:
         return {"id": str(uid), "jwt": token}
 
     def logout(self, uid: int) -> None:
-        """Проверяет, что пользователь существует (исходный API только пишет событие в лог).
+        """Validate that the user exists (the original API only logs the event).
 
         Args:
-            uid: Идентификатор пользователя, извлечённый из JWT.
+            uid: User id extracted from the JWT.
 
         Raises:
-            UserNotFoundError: Если пользователь не существует.
+            UserNotFoundError: If the user does not exist.
         """
         user = self.customer_repo.find_customer_by_uid(uid)
         if not user:
